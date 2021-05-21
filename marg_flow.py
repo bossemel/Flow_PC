@@ -6,7 +6,6 @@ class Marginal_Flow:
     def __init__(self, n_layers):
         self.n_layers = n_layers
         # @Todo: add other options
-        # @Todo: rewrite this to be actual NSF flow
         # Define an invertible transformation.
         transform = transforms.CompositeTransform([
             self.create_transform() for ii in range(self.n_layers)])
@@ -18,7 +17,6 @@ class Marginal_Flow:
         self.flow = flows.Flow(transform=transform, distribution=base_distribution)
 
     def create_transform(self):
-        # @Todo: replace this with NSF
         # return transforms.CompositeTransform([
         #     transforms.MaskedAffineAutoregressiveTransform(features=1, hidden_features=0),
         #     transforms.RandomPermutation(features=1)

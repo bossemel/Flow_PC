@@ -2,10 +2,14 @@ import numpy as np
 import torch
 
 
-class DataProvider:
+class DataProvider: # @Todo: debug this. possibly use pytorch data loader class...
 
-    def __init__(self, inputs, batch_size, max_num_batches=-1, shuffle_order=True, random_seed=4):
+    def __init__(self, inputs, batch_size, cond_inputs=None, max_num_batches=-1, shuffle_order=True, random_seed=4):
         self.inputs = torch.from_numpy(inputs)
+        if cond_inputs is not None:
+            self.cond_inputs = torch.from_numpy(cond_inputs)
+        else:
+            self.cond_inputs = None
         if batch_size < 1:
             raise ValueError('batch_size must be >= 1')
         self._batch_size = batch_size
@@ -66,6 +70,8 @@ class DataProvider:
         inv_perm = np.argsort(self._current_order)
         self._current_order = self._current_order[inv_perm]
         self.inputs = self.inputs[inv_perm]
+        if self.cond_inputs is not None:
+            self.cond_inputs = self.cond_inputs[inv_perm]
         self.new_epoch()
 
     def shuffle(self):
@@ -73,6 +79,8 @@ class DataProvider:
         perm = self.rng.permutation(self.inputs.shape[0])
         self._current_order = self._current_order[perm]
         self.inputs = self.inputs[perm]
+        if self.cond_inputs is not None:
+            self.cond_inputs = self.cond_inputs[perm]
 
     def next(self):
         """Returns next data batch or raises `StopIteration` if at end."""
@@ -85,5 +93,9 @@ class DataProvider:
         batch_slice = slice(self._curr_batch * self.batch_size,
                             (self._curr_batch + 1) * self.batch_size)
         inputs_batch = self.inputs[batch_slice]
+        if self.cond_inputs is not None:
+            cond_inputs_batch = self.cond_inputs[batch_slice]
+        else:
+            cond_inputs_batch = None
         self._curr_batch += 1
-        return inputs_batch
+        return inputs_batch, cond_inputs_batch
