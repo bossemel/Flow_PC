@@ -18,7 +18,10 @@ def marginal_transform_1D(inputs: np.ndarray, lr=0.001, weight_decay=0.00001,
     marg_flow = Marginal_Flow(n_layers=5)
     optimizer, scheduler = set_optimizer_scheduler(marg_flow.flow,
                                                    lr,
-                                                   weight_decay,
+                                             ...'
+...'
+...'
+...'      weight_decay,
                                                    amsgrad,
                                                    num_epochs)
 
