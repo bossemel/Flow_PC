@@ -1,4 +1,5 @@
 from nflows import transforms, distributions, flows
+import torch
 
 
 class Marginal_Flow:
