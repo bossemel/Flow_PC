@@ -67,7 +67,6 @@ def copula_estimator(x_inputs: np.ndarray, y_inputs: np.ndarray,
     data_val = DataProvider(inputs=data_val[:, :2], cond_inputs=data_val[:, 2:])
     loader_val = DataLoader(data_val, batch_size=64, shuffle=True, num_workers=4) # @Todo: take these arguments from somewhere else
 
-
     # Initialize Copula Transform
     cop_flow = Cop_Flow(n_layers=5, context_dim=cond_set.shape[1])
     optimizer, scheduler = set_optimizer_scheduler(cop_flow.flow,
@@ -87,7 +86,10 @@ def copula_estimator(x_inputs: np.ndarray, y_inputs: np.ndarray,
     inputs = torch.cat([x_inputs, y_inputs], axis=1)
     outputs = experiment.model.log_prob(inputs.float(), cond_set.float())
 
-    # @Todo: add transform to uniform distribution
+    # Transform to uniform
+    normal_distr = torch.distributions.normal.Normal(0, 1)
+    outputs = normal_distr.cdf(outputs)
+
     return outputs
 
 
@@ -110,9 +112,6 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
     y_uni = marginal_transform(y_input, num_epochs=num_epochs)
     cond_uni = marginal_transform(cond_set, num_epochs=num_epochs)
 
-    print(torch.min(x_uni), torch.max(x_uni))
-    print(torch.min(y_uni), torch.max(y_uni))
-    print(torch.min(cond_uni), torch.max(cond_uni))
     cond_copula = copula_estimator(x_uni, y_uni, cond_uni, num_epochs=num_epochs)
     raise NotImplementedError
 
