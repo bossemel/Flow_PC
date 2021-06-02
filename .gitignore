@@ -3,5 +3,4 @@ data/
 .idea
 .DS_Store
 __pycache__/
-cm_flows.egg-info/SOURCES.txt
 cm_flows.egg-info/
