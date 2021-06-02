@@ -7,6 +7,7 @@ from utils import set_optimizer_scheduler
 from data_provider import DataProvider
 from torch.utils.data import DataLoader
 import torch
+from utils import nll_error
 
 
 def marginal_transform_1d(inputs: np.ndarray, lr=0.001, weight_decay=0.00001,
@@ -28,14 +29,16 @@ def marginal_transform_1d(inputs: np.ndarray, lr=0.001, weight_decay=0.00001,
                                                    amsgrad,
                                                    num_epochs)
 
-    experiment = Experiment(marg_flow.flow, optimizer, scheduler, loader_train, loader_val)
+    experiment = Experiment(model=marg_flow.flow, optimizer=optimizer, scheduler=scheduler, train_dataset=loader_train,
+                            valid_dataset=loader_val, error=nll_error)
 
     # Train marginal flow
-    experiment.train(num_epochs=num_epochs)
-
+    stats, run_time = experiment.train(num_epochs=num_epochs) # @Todo: adjust stats the way i like it and how it fits to my plotting functions
+    print(stats, run_time)
+    exit()
     # Evaluate
     # @Todo: implement evaluate (?)
-
+    # @Todo: import save_statistics function, collect_experiment_dicts and plot_results_graph and visualize1D
     # Transform
     outputs = experiment.model.log_prob(inputs)
 
@@ -59,7 +62,7 @@ def marginal_transform(inputs: np.ndarray, lr=0.001, weight_decay=0.00001,
 
 def copula_estimator(x_inputs: np.ndarray, y_inputs: np.ndarray,
                      cond_set: np.ndarray, lr=0.001, weight_decay=0.00001,
-                       amsgrad=False, num_epochs=100, batch_size=128):
+                       amsgrad=False, num_epochs=100, batch_size=128): # @Todo: find out whether this enters as a tensor or array
     # Transform into data object
     inputs_cond = np.concatenate([x_inputs, y_inputs, cond_set], axis=1)
     data_train, data_val = train_test_split(inputs_cond, test_size=0.20)
@@ -81,10 +84,10 @@ def copula_estimator(x_inputs: np.ndarray, y_inputs: np.ndarray,
     experiment = Experiment(cop_flow.flow, optimizer, scheduler, loader_train, loader_val)
 
     # Train marginal flow
-    experiment.train(num_epochs=num_epochs)
+    stats, keys, run_time = experiment.train(num_epochs=num_epochs)
 
     # Evaluate
-    # @Todo: implement evaluate (?)
+    # @Todo: implement evaluate (?): save logged info somewhere, save experiment stats, save plots
 
     # Transform
     inputs = torch.cat([x_inputs, y_inputs], axis=1)
@@ -97,16 +100,22 @@ def copula_estimator(x_inputs: np.ndarray, y_inputs: np.ndarray,
     return outputs, experiment.model  # @Todo: recheck whether this model is then trained...
 
 
-def mi_estimator(cop_flow) -> float:
+def mi_estimator(cop_flow, obs_n=1000, obs_m=100) -> float:
     # @Todo: possibly also add ranges
     # @Todo: think about format of mutual information
 
-    # @Todo: sample from uniform for w
-    # @Todo: sample from cop flow given w
-    # @Todo: calculate conditional mutual information
+    ww = torch.FloatTensor(obs_m, 5).uniform_(0, 1)
+    ww = torch.distributions.normal.Normal(0, 1).icdf(ww)
 
-    raise NotImplementedError
-    # return mutual_information
+    cop_samples = cop_flow._sample(num_samples=obs_n, context=ww) # @Todo: make this run in samples
+    cop_samples = torch.distributions.normal.Normal(0, 1).cdf(cop_samples)
+    # @Todo: remove 0 from  output
+
+    # @Todo: calculate conditional mutual information
+    mi = torch.mean(torch.log(cop_samples))
+    # @Todo: think about a way to add error bars
+    print(mi)
+    return float(mi)
 
 
 def hypothesis_test(mutual_information: float, threshold: float) -> bool: # @Todo: something like num obs?
@@ -122,11 +131,11 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
     y_uni = marginal_transform(y_input, num_epochs=num_epochs)
     cond_uni = marginal_transform(cond_set, num_epochs=num_epochs)
 
-    cond_copula, cop_flow = copula_estimator(x_uni, y_uni, cond_uni, num_epochs=num_epochs)
+    copula_samples, cop_flow = copula_estimator(x_uni, y_uni, cond_uni, num_epochs=num_epochs)
 
-    mutual_information = mi_estimator(cond_copula)
+    mutual_information = mi_estimator(cop_flow)
 
-    result = hypothesis_test(mutual_information)
+    result = hypothesis_test(mutual_information, threshold=0.95)
 
     return result
 
@@ -135,10 +144,10 @@ if __name__ == '__main__':
     # @Todo: set seeds
 
     # Get inputs
-    obs = 10
-    epochs = 1
+    obs = 10000
+    epochs = 10
     x = np.random.uniform(size=(obs, 1))
     y = np.random.uniform(size=(obs, 1))
     z = np.random.uniform(size=(obs, 5))
     #
-    print(copula_indep_test(x, y, z, num_epochs=1))
+    print(copula_indep_test(x, y, z, num_epochs=epochs))

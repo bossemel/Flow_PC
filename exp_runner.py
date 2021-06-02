@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class Experiment:
 
     def __init__(self, model: nn.Module, optimizer: torch.optim.Optimizer, scheduler: torch.optim.lr_scheduler,
+                 error,
                  train_dataset: torch.tensor, valid_dataset: torch.tensor = None, data_monitors: dict = None,
                  clip_grad_norm: bool = False, clip: float = 5):
         self.model = model
@@ -19,7 +20,7 @@ class Experiment:
         self.scheduler = scheduler
         self.train_dataset = train_dataset
         self.valid_dataset = valid_dataset
-        self.data_monitors = OrderedDict()
+        self.data_monitors = {'error': error}
         if data_monitors is not None:
             self.data_monitors.update(data_monitors)
         self.tqdm_progress = tqdm.tqdm
@@ -45,25 +46,25 @@ class Experiment:
                 self.scheduler.step()
                 train_progress_bar.update(1)
 
-    def eval_monitors(self, dataset, label) -> OrderedDict: # @Todo: find out what label is
-        data_mon_vals = OrderedDict([(key + label, 0.) for key
+    def eval_monitors(self, dataset, label) -> OrderedDict:
+        data_mon_vals = OrderedDict([(key + label, []) for key
                                      in self.data_monitors.keys()])
         for inputs_batch in dataset:
             if type(inputs_batch) is list:
                 inputs_batch, cond_inputs_batch = inputs_batch
             else:
                 cond_inputs_batch = None
-            log_density = self.model.log_prob(inputs_batch, cond_inputs_batch) #@Todo: put model into eval mode somehow
-            loss = -torch.mean(log_density)
+            with torch.no_grad():
+                self.model.eval()
+                log_density = self.model.log_prob(inputs_batch, cond_inputs_batch) #@Todo: put model into eval mode somehow
             for key, data_monitor in self.data_monitors.items():
-                data_mon_vals[key + label] += data_monitor(
-                    loss)
+                data_mon_vals[key + label].append(data_monitor(log_density))
         for key, data_monitor in self.data_monitors.items():
-            data_mon_vals[key + label] /= dataset.num_batches
+            data_mon_vals[key + label] = np.mean(data_mon_vals[key + label])
         return data_mon_vals
 
     def get_epoch_stats(self) -> OrderedDict:
-        epoch_stats = OrderedDict()
+        epoch_stats = dict()
         epoch_stats.update(self.eval_monitors(self.train_dataset, '(train)'))
         if self.valid_dataset is not None:
             epoch_stats.update(self.eval_monitors(
@@ -78,7 +79,7 @@ class Experiment:
 
     def train(self, num_epochs: int, stats_interval: int = 5):
         start_train_time = time.time()
-        run_stats = [list(self.get_epoch_stats().values())]
+        run_stats = {}
         epoch = 0
         with self.tqdm_progress(total=num_epochs) as progress_bar:
             progress_bar.set_description("Experiment")
@@ -89,9 +90,13 @@ class Experiment:
                 if epoch % stats_interval == 0:
                     stats = self.get_epoch_stats()
                     self.log_stats(epoch, epoch_time, stats)
-                    run_stats.append(list(stats.values()))
+                    for key in stats.keys():
+                        if key in run_stats:
+                            run_stats[key].append(stats[key])
+                        else:
+                            run_stats[key] = [stats[key]]
                 progress_bar.update(1)
                 epoch += 1
         finish_train_time = time.time()
         total_train_time = finish_train_time - start_train_time
-        return np.array(run_stats), {k: i for i, k in enumerate(stats.keys())}, total_train_time
+        return run_stats, total_train_time
