@@ -4,3 +4,5 @@ data/
 .DS_Store
 __pycache__/
 cm_flows.egg-info/
+results/
+saved_models/

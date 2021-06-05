@@ -1,5 +1,23 @@
 from nflows import transforms, distributions, flows
 import torch
+import torch.nn as nn
+from utils import Flow_decorator
+
+
+class Flow_decorator(flows.Flow):
+    def __init__(self, transform, distribution):
+        super().__init__(transform=transform, distribution=distribution)
+        self.layer_dict = nn.ModuleDict()
+
+    def reset_parameters(self):
+        """
+        Re-initialize the network parameters.
+        """
+        for item in self.layer_dict.children():
+            try:
+                item.reset_parameters()
+            except:
+                pass
 
 
 class Marginal_Flow:
@@ -15,7 +33,7 @@ class Marginal_Flow:
         base_distribution = distributions.StandardNormal(shape=[1])
 
         # Combine into a flow.
-        self.flow = flows.Flow(transform=transform, distribution=base_distribution)
+        self.flow = Flow_decorator(transform=transform, distribution=base_distribution)
 
     def create_transform(self):
         # return transforms.CompositeTransform([

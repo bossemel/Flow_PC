@@ -1,7 +1,6 @@
 from nflows import transforms, distributions, flows, utils
-import torch.nn as nn
 from nflows.nn.nets.resnet import ResidualNet
-import torch
+from utils import Flow_decorator
 
 
 class Cop_Flow:
@@ -20,7 +19,7 @@ class Cop_Flow:
         base_distribution = distributions.StandardNormal(shape=[2])
 
         # Combine into a flow.
-        self.flow = flows.Flow(transform=transform, distribution=base_distribution)
+        self.flow = Flow_decorator(transform=transform, distribution=base_distribution)
 
     def create_transform(self, ii):
         return transforms.PiecewiseRationalQuadraticCouplingTransform(
