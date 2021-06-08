@@ -9,7 +9,8 @@ from options import TrainOptions
 import os
 import json
 import random
-
+import scipy.stats
+eps = 0.000001
 
 def marginal_transform_1d(inputs: np.ndarray, exp_name, experiment_logs_dir, device, lr=0.001, weight_decay=0.00001,
                           amsgrad=False, num_epochs=100, batch_size=128, num_workers=12, use_gpu=True) -> np.ndarray:
@@ -68,8 +69,8 @@ def marginal_transform(inputs: np.ndarray, exp_name, experiment_logs_dir, device
     return outputs
 
 
-def copula_estimator(x_inputs: np.ndarray, y_inputs: np.ndarray,
-                     cond_set: np.ndarray, exp_name, device, lr=0.001, weight_decay=0.00001,
+def copula_estimator(x_inputs: torch.Tensor, y_inputs: torch.Tensor,
+                     cond_set: torch.Tensor, exp_name, device, lr=0.001, weight_decay=0.00001,
                        amsgrad=False, num_epochs=100, batch_size=128, num_workers=12): # @Todo: find out whether this enters as a tensor or array
     # Transform into data object
     inputs_cond = np.concatenate([x_inputs.cpu().numpy(), y_inputs.cpu().numpy(), cond_set.cpu().numpy()], axis=1)
@@ -98,51 +99,72 @@ def copula_estimator(x_inputs: np.ndarray, y_inputs: np.ndarray,
     # Train marginal flow
     experiment_metrics, test_metrics = experiment.run_experiment()  # run experiment and return experiment metrics
 
-    # Transform
-    inputs = torch.cat([x_inputs, y_inputs], axis=1)
-    outputs = experiment.model.log_prob(inputs.float(), cond_set.float())
+    # # Transform
+    # inputs = torch.cat([x_inputs, y_inputs], axis=1)
+    # outputs = experiment.model.log_prob(inputs.float().to(device), cond_set.float().to(device))
 
-    # Transform to uniform
-    normal_distr = torch.distributions.normal.Normal(0, 1)
-    outputs = normal_distr.cdf(outputs)  # @Todo: are these outputs needed?
+    # # Transform to uniform
+    # normal_distr = torch.distributions.normal.Normal(0, 1)
+    # #outputs = normal_distr.cdf(outputs)  # @Todo: are these outputs needed?
 
-    return outputs, experiment.model  # @Todo: recheck whether this model is then trained...
+    return experiment.model  # @Todo: recheck whether this model is then trained...
 
 
-def mi_estimator(cop_flow, device, obs_n=1000, obs_m=100) -> float:
+def mi_estimator(cop_flow, device, obs_n=20, obs_m=10) -> float:
     # @Todo: possibly also add ranges
     # @Todo: think about format of mutual information
 
     ww = torch.FloatTensor(obs_m, 5).uniform_(0, 1)
-    ww = torch.distributions.normal.Normal(0, 1).icdf(ww)
+    ww = torch.distributions.normal.Normal(0, 1).icdf(ww) # @Todo: make this normal directly? why not?
 
-    cop_samples = cop_flow._sample(num_samples=obs_n, context=ww.to(device)) # @Todo: make this run in samples
-    cop_samples = torch.distributions.normal.Normal(0, 1).cdf(cop_samples)
-    # @Todo: remove 0 from  output
+    #cop_samples = cop_flow.sample(num_samples=obs_n, context=ww.to(device)) # @Todo: make this run in samples
+    log_density = torch.empty((ww.shape[0], obs_m))
+    for mm in range(obs_m):
+        noise = cop_flow._distribution.sample(ww.shape[0])
+        cop_samples, _ = cop_flow._transform.inverse(noise, context=ww.to(device))
+        norm_distr = torch.distributions.normal.Normal(0, 1)
+        log_density[:, mm] = torch.log(cop_flow.pdf_uniform(norm_distr.cdf(cop_samples), norm_distr.cdf(ww).to(device))) # @Todo: triple check if this is correct
+    
+    
+    mi = torch.mean(log_density) # @Todo: For this to work, we need ***uniform*** copula density, meaning we need to transwer this density to a true copula!
 
-    # @Todo: calculate conditional mutual information
-    mi = torch.mean(torch.log(cop_samples))
-    # @Todo: think about a way to add error bars
-    print(mi)
-    return float(mi)
+    return mi.cpu().numpy()
 
 
-def hypothesis_test(mutual_information: float, threshold: float) -> bool: # @Todo: something like num obs?
-    raise NotImplementedError
-    # return result
+def hypothesis_test(mutual_information: float, threshold: float = 0.05) -> bool: # @Todo: something like num obs?
+    statistic, pvalue = scipy.stats.ttest_1samp(mutual_information, 0, axis=0, nan_policy='raise')
+    print('Test statistic: {}, P-Value: {}'.format(statistic, pvalue))
+    print('Threshold: ', threshold)
+    if pvalue > threshold:
+        print('MI not significantly different from zero. Sample conditionally independent')
+        return True
+    elif pvalue <= threshold:
+        print('MI significantly different from zero. Samples not conditionally independent.')
+        return False
+    else:
+        print('Invalid test result.')
 
 
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
-                      cond_set: np.ndarray, exp_name, experiment_logs_dir, device, num_epochs=100) -> bool:
+                      cond_set: np.ndarray, exp_name, experiment_logs_dir, device, num_epochs=100, num_runs=50) -> bool:
     x_uni = marginal_transform(x_input, exp_name, experiment_logs_dir, device=device, num_epochs=num_epochs)
     y_uni = marginal_transform(y_input, exp_name, experiment_logs_dir, device=device, num_epochs=num_epochs)
     cond_uni = marginal_transform(cond_set, exp_name, experiment_logs_dir, device=device, num_epochs=num_epochs)
 
-    copula_samples, cop_flow = copula_estimator(x_uni, y_uni, cond_uni, exp_name=exp_name, device=device, num_epochs=num_epochs)
+    cop_flow = copula_estimator(x_uni, y_uni, cond_uni, exp_name=exp_name, device=device, num_epochs=num_epochs)
 
-    mutual_information = mi_estimator(cop_flow, device=device)
+    with torch.no_grad():
+        cop_flow.eval()
+        mi_runs = []
+        ii = 0
+        while ii < num_runs:
+            mi_estimate = mi_estimator(cop_flow, device=device)
+            if not np.isnan(mi_estimate):
+                mi_runs.append(mi_estimate)
+                ii += 1
 
-    result = hypothesis_test(mutual_information, threshold=0.95)
+
+    result = hypothesis_test(np.array(mi_runs), threshold=0.05)
 
     return result
 
@@ -169,7 +191,7 @@ if __name__ == '__main__':
         torch.cuda.manual_seed(args.random_seed)
 
     # Get inputs
-    obs = 10000
+    obs = 50
     epochs = 1
     x = np.random.uniform(size=(obs, 1))
     y = np.random.uniform(size=(obs, 1))

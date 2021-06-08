@@ -1,6 +1,8 @@
 from nflows import transforms, distributions, flows, utils
 from nflows.nn.nets.resnet import ResidualNet
-from utils import Flow_decorator
+from utils import Flow_decorator, gaussian_change_of_var_ND
+import torch
+import scipy.stats 
 
 
 class Cop_Flow:
