@@ -54,14 +54,7 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name, device, lr=0.001, weight
         #             best_val=True,
         #             name=model_name)
         # # Perform test evaluation
-        # test_dict = test(args=args,
-        #                  epoch=best_dict['best_validation_epoch'],
-        #                  model=model,
-        #                  loader=data_loaders['test_loader'],
-        #                  device=args.device,
-        #                  test_dict=test_dict,
-        #                  model_name=model_name,
-        #                  disable_tqdm=disable_tqdm)
+
             # visualize1d(model=model,
             #             epoch=best_dict['best_validation_epoch'],
             #             args=args,

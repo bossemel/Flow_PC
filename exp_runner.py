@@ -106,24 +106,6 @@ class ExperimentBuilder(nn.Module):
 
         return total_num_params
 
-    # def plot_func_def(self,all_grads, layers):
-    #     """
-    #     Plot function definition to plot the average gradient with respect to the number of layers in the given model
-    #     :param all_grads: Gradients wrt weights for each layer in the model.
-    #     :param layers: Layer names corresponding to the model parameters
-    #     :return: plot for gradient flow
-    #     """
-    #     plt.plot(all_grads, alpha=0.3, color="b")
-    #     plt.hlines(0, 0, len(all_grads)+1, linewidth=1, color="k" )
-    #     plt.xticks(range(0,len(all_grads), 1), layers, rotation="vertical")
-    #     plt.xlim(xmin=0, xmax=len(all_grads))
-    #     plt.xlabel("Layers")
-    #     plt.ylabel("Average Gradient")
-    #     plt.title("Gradient flow")
-    #     plt.grid(True)
-    #     plt.tight_layout()
-    #     return plt
-
     def run_train_iter(self, inputs_batch, cond_inputs_batch=None):
         self.train()  # sets model to training mode (in case batch normalization or other methods have different procedures for training and evaluation)
         inputs_batch = inputs_batch.float().to(device=self.device) # send data to device as torch tensors
