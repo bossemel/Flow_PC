@@ -123,7 +123,7 @@ def mi_estimator(cop_flow, device, obs_n=20, obs_m=10) -> float:
         noise = cop_flow._distribution.sample(ww.shape[0])
         cop_samples, _ = cop_flow._transform.inverse(noise, context=ww.to(device))
         norm_distr = torch.distributions.normal.Normal(0, 1)
-        log_density[:, mm] = torch.log(cop_flow.pdf_uniform(norm_distr.cdf(cop_samples), norm_distr.cdf(ww).to(device))) # @Todo: triple check if this is correct
+        log_density[:, mm] = cop_flow.log_pdf_uniform(norm_distr.cdf(cop_samples), norm_distr.cdf(ww).to(device)) # @Todo: triple check if this is correct
     
     
     mi = torch.mean(log_density) # @Todo: For this to work, we need ***uniform*** copula density, meaning we need to transwer this density to a true copula!

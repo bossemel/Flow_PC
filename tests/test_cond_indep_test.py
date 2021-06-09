@@ -5,6 +5,7 @@ from options import TrainOptions
 from utils import create_folders
 import os 
 import json 
+import random 
 
 
 def test_copula_estimator():
@@ -107,4 +108,10 @@ def test_hypothesis_test_5():
 
 if __name__ == '__main__':
 
-    pass
+    # Set Seed
+    random_seed = 432
+    np.random.seed(random_seed)
+    torch.manual_seed(random_seed)
+    random.seed(random_seed)
+    torch.cuda.manual_seed(random_seed)
+
