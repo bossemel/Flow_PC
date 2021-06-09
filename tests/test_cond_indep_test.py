@@ -8,6 +8,9 @@ import json
 import random 
 
 
+# @Todo: write test that trains cond indep test for different inputs and evalute the results 
+# @Todo: write test that evaluted the conditional mutual information function for different given copula functions 
+
 def test_copula_estimator():
     # Training settings
     args = TrainOptions().parse()   # get training options

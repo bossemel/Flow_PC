@@ -9,13 +9,13 @@ from pathlib import Path
 import matplotlib
 matplotlib.rcParams.update({'font.size': 8})
 
-from utils.load_and_save import save_statistics
-from utils.loss_plots import plot_result_graphs, collect_experiment_dicts
+from utils.load_and_save import save_statistics, load_statistics
+from utils.plotting import plot_result_graphs
 
 
 class ExperimentBuilder(nn.Module):
     def __init__(self, network_model, optimizer,
-                 scheduler, error, exp_name, num_epochs, train_data, val_data,
+                 scheduler, error, exp_name, flow_name, num_epochs, train_data, val_data,
                  test_data, use_gpu, continue_from_epoch=-1):
         """
         Initializes an ExperimentBuilder object. Such an object takes care of running training and evaluation of a deep net
@@ -35,6 +35,7 @@ class ExperimentBuilder(nn.Module):
 
 
         self.exp_name = exp_name
+        self.flow_name = flow_name
         self.model = network_model
 
         if torch.cuda.device_count() > 1 and use_gpu:
@@ -64,10 +65,16 @@ class ExperimentBuilder(nn.Module):
         self.learning_rate_scheduler = scheduler
 
         # Generate the directory names
-        self.exp_path = os.path.join('results', self.exp_name) # @Todo: somehow make this more specific to the flow?
+        self.exp_path = os.path.join('results', self.exp_name, self.flow_name)
         self.figures_path = os.path.join(self.exp_path, 'figures')
-        self.experiment_logs = os.path.join(self.exp_path, 'result_outputs')
+        self.experiment_logs = os.path.join(self.exp_path, 'stats')
         self.experiment_saved_models = os.path.join('saved_models', self.exp_name)
+
+        # Create the folders 
+        Path(self.exp_path).mkdir(parents=True, exist_ok=True)
+        Path(self.figures_path).mkdir(parents=True, exist_ok=True)
+        Path(self.experiment_logs).mkdir(parents=True, exist_ok=True)
+        Path(self.experiment_saved_models).mkdir(parents=True, exist_ok=True)
 
         # Set best models to be at 0 since we are just starting
         self.best_val_model_idx = 0
@@ -266,19 +273,11 @@ class ExperimentBuilder(nn.Module):
                         # save test set metrics on disk in .csv format
                         stats_dict=test_losses, current_epoch=0, continue_from_mode=False)
 
-        result_dict = collect_experiment_dicts(target_dir=self.experiment_logs, model_type=self.exp_name)
-        #
-        # plot_result_graphs(figures_path, exp_name,
-        #                    result_dict, model_type=model_name)
-        #
-        # # test_dict = jsd_eval_marginal(args=args,
-        # #                           model=model,
-        # #                           test_dict=test_dict)
-        #
-        # visualize1d(model=self.model,
-        #             epoch=best_dict['best_validation_epoch'],
-        #             args=args,
-        #             best_val=True,
-        #             name=model_name)
+
+        result_dict = load_statistics(self.experiment_logs, filename='summary.csv')
+        print(result_dict)
+
+        plot_result_graphs(figures_path=self.figures_path, exp_name=self.exp_name, 
+                           stats=result_dict, flow_name=self.flow_name)
 
         return total_losses, test_losses

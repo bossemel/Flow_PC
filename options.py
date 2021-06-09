@@ -22,6 +22,9 @@ class TrainOptions:
 
         parser.add_argument(
             '--random_seed', type=int, default=4, help='random seed')
+
+        parser.add_argument(
+            '--epochs', type=int, default=100, help='number of epochs to train (default: 100)')
         # CM Options
 
         # Architecture
@@ -37,8 +40,7 @@ class TrainOptions:
         # # Training options
         # parser.add_argument(
         #     '--batch_size', type=int, default=128, help='input batch size for training')
-        # parser.add_argument(
-        #     '--epochs_c', type=int, default=100, help='number of epochs to train (default: 100)')
+
         # parser.add_argument(
         #     '--epochs_m', type=int, default=100, help='number of epochs to train (default: 100)')
         # parser.add_argument(

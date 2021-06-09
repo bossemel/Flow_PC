@@ -1,6 +1,6 @@
 from nflows import transforms, distributions, flows, utils
 from nflows.nn.nets.resnet import ResidualNet
-from utils import gaussian_change_of_var_ND
+from utils import gaussian_change_of_var_ND, js_divergence
 import torch 
 from nflows import transforms, distributions, flows
 import torch
@@ -111,6 +111,39 @@ class Basic_Flow(flows.Flow):
     def log_pdf_uniform(self, inputs, context=None):
         with torch.no_grad():
             return gaussian_change_of_var_ND(inputs, self.log_pdf_normal, context=context)
+
+    def jsd(self, true_distribution, context=None, num_samples=100000):
+        """Returns JS-Divergence of the predicted distribution and the true distribution
+        """
+        with torch.no_grad():
+            # Get ground truth
+            samples_target = true_distribution.sample(num_samples=num_samples, context=context) # @Todo: write distribution function for copulas that can 'sample'
+            samples_pred = self.sample_copula(num_samples=num_samples, context=context)
+
+            # Prob X in both distributions
+            prob_x_in_p = self.pdf_uniform(inputs=samples_pred, context=context)
+            prob_x_in_q = true_distribution.pdf(samples_pred, context=context)
+
+            # Prob Y in both distributions
+            prob_y_in_p = self.pdf_uniform(inputs=samples_target, context=context)
+            prob_y_in_q = true_distribution.pdf(samples_target, context=context)
+
+            assert torch.min(prob_x_in_p) >= 0
+            assert torch.min(prob_x_in_q) >= 0
+            assert torch.min(prob_y_in_p) >= 0
+            assert torch.min(prob_y_in_q) >= 0
+
+            assert prob_x_in_p.shape == (num_samples,), '{}'.format(prob_x_in_p.shape)
+            assert prob_x_in_q.shape == (num_samples,)
+            assert prob_y_in_p.shape == (num_samples,)
+            assert prob_y_in_q.shape == (num_samples,)
+
+            divergence = js_divergence(prob_x_in_p=prob_x_in_p,
+                                       prob_x_in_q=prob_x_in_q,
+                                       prob_y_in_p=prob_y_in_p,
+                                       prob_y_in_q=prob_y_in_q)
+
+            return divergence
 
 
 class Cop_Flow(Basic_Flow):

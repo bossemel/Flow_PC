@@ -9,10 +9,10 @@ import os
 import json
 import random
 import scipy.stats
-eps = 0.000001
+eps = 1e-10
 
-def marginal_transform_1d(inputs: np.ndarray, exp_name, experiment_logs_dir, device, lr=0.001, weight_decay=0.00001,
-                          amsgrad=False, num_epochs=100, batch_size=128, num_workers=12, use_gpu=True) -> np.ndarray:
+def marginal_transform_1d(inputs: np.ndarray, exp_name, device, lr=0.001, weight_decay=0.00001,
+                          amsgrad=False, num_epochs=100, batch_size=128, num_workers=12, use_gpu=True, variable_num=0) -> np.ndarray:
     # Transform into data object
     loader_train, loader_val, loader_test = split_data_marginal(inputs, batch_size, num_workers=num_workers)
 
@@ -29,6 +29,7 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name, experiment_logs_dir, dev
                                    scheduler=scheduler,
                                    error=nll_error,
                                    exp_name=exp_name,
+                                   flow_name= 'mf_' + str(variable_num),
                                    num_epochs=num_epochs,
                                    use_gpu=torch.cuda.is_available(),
                                    train_data=loader_train,
@@ -43,24 +44,48 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name, experiment_logs_dir, dev
     inputs = torch.from_numpy(inputs).float().to(device)
     outputs = experiment.model.log_prob(inputs)
 
+        # # test_dict = jsd_eval_marginal(args=args,
+        # #                           model=model,
+        # #                           test_dict=test_dict)
+        #
+        # visualize1d(model=self.model,
+        #             epoch=best_dict['best_validation_epoch'],
+        #             args=args,
+        #             best_val=True,
+        #             name=model_name)
+        # # Perform test evaluation
+        # test_dict = test(args=args,
+        #                  epoch=best_dict['best_validation_epoch'],
+        #                  model=model,
+        #                  loader=data_loaders['test_loader'],
+        #                  device=args.device,
+        #                  test_dict=test_dict,
+        #                  model_name=model_name,
+        #                  disable_tqdm=disable_tqdm)
+            # visualize1d(model=model,
+            #             epoch=best_dict['best_validation_epoch'],
+            #             args=args,
+            #             best_val=True,
+            #             name=model_name)
+
     return outputs
 
 
-def marginal_transform(inputs: np.ndarray, exp_name, experiment_logs_dir, device, lr=0.001, weight_decay=0.00001,
+def marginal_transform(inputs: np.ndarray, exp_name, device, lr=0.001, weight_decay=0.00001,
                        amsgrad=False, num_epochs=100, batch_size=128) -> np.ndarray:
     if inputs.shape[1] > 1:
         outputs = torch.empty_like(torch.from_numpy(inputs)).to(device).detach()
         for dim in range(inputs.shape[1]):
             outputs[:, dim: dim + 1] = marginal_transform_1d(inputs=inputs[:, dim: dim+1],
                                                              exp_name=exp_name,
-                                                             experiment_logs_dir=experiment_logs_dir,
                                                              device=device,
                                                              lr=lr, weight_decay=weight_decay,
                                                              amsgrad=amsgrad,
                                                              num_epochs=num_epochs,
-                                                             batch_size=batch_size).reshape(-1, 1).detach()
+                                                             batch_size=batch_size,
+                                                             variable_num=dim).reshape(-1, 1).detach()
     elif inputs.shape[1] == 1:
-        outputs = marginal_transform_1d(inputs=inputs,  exp_name=exp_name, experiment_logs_dir=experiment_logs_dir,
+        outputs = marginal_transform_1d(inputs=inputs,  exp_name=exp_name,
                                         device=device, lr=lr, weight_decay=weight_decay, amsgrad=amsgrad,
                                         num_epochs=num_epochs, batch_size=batch_size).reshape(-1, 1).detach()
     else:
@@ -88,6 +113,7 @@ def copula_estimator(x_inputs: torch.Tensor, y_inputs: torch.Tensor,
                                    scheduler=scheduler,
                                    error=nll_error,
                                    exp_name=exp_name,
+                                   flow_name= 'cf',
                                    num_epochs=num_epochs,
                                    use_gpu=torch.cuda.is_available(),
                                    train_data=loader_train,
@@ -142,12 +168,12 @@ def hypothesis_test(mutual_information: float, threshold: float = 0.05) -> bool:
 
 
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
-                      cond_set: np.ndarray, exp_name, experiment_logs_dir, device, num_epochs=100, num_runs=50) -> bool:
-    x_uni = marginal_transform(x_input, exp_name, experiment_logs_dir, device=device, num_epochs=num_epochs)
-    y_uni = marginal_transform(y_input, exp_name, experiment_logs_dir, device=device, num_epochs=num_epochs)
-    cond_uni = marginal_transform(cond_set, exp_name, experiment_logs_dir, device=device, num_epochs=num_epochs)
+                      cond_set: np.ndarray, exp_name, device, num_epochs=100, num_runs=50, batch_size=64) -> bool:
+    x_uni = marginal_transform(x_input, exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size)
+    y_uni = marginal_transform(y_input, exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size)
+    cond_uni = marginal_transform(cond_set, exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size)
 
-    cop_flow = copula_estimator(x_uni, y_uni, cond_uni, exp_name=exp_name, device=device, num_epochs=num_epochs)
+    cop_flow = copula_estimator(x_uni, y_uni, cond_uni, exp_name=exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size)
 
     with torch.no_grad():
         cop_flow.eval()
@@ -188,10 +214,11 @@ if __name__ == '__main__':
 
     # Get inputs
     obs = 50
-    epochs = 1
+    # args.epochs = 1
     x = np.random.uniform(size=(obs, 1))
     y = np.random.uniform(size=(obs, 1))
     z = np.random.uniform(size=(obs, 5))
+
     #
-    print(copula_indep_test(x, y, z, exp_name=args.exp_name, experiment_logs_dir=args.experiment_logs,
-                            device=args.device, num_epochs=epochs))
+    print(copula_indep_test(x, y, z, exp_name=args.exp_name, 
+                            device=args.device, num_epochs=args.epochs, batch_size=args.batch_size))

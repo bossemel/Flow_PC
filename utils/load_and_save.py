@@ -60,11 +60,11 @@ def load_statistics(experiment_log_dir, filename):
     with open(summary_filename, 'r+') as f:
         lines = f.readlines()
 
-    keys = lines[0].split(",")
+    keys = lines[0].strip().split(",")
     stats = {key: [] for key in keys}
     for line in lines[1:]:
         values = line.split(",")
         for idx, value in enumerate(values):
-            stats[keys[idx]].append(value)
+            stats[keys[idx]].append(float(value))
 
     return stats
