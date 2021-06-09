@@ -1,6 +1,5 @@
 import numpy as np
-from marg_flow import Marginal_Flow
-from cop_flow import Cop_Flow 
+from flows import Cop_Flow_Constructor, Marg_Flow_Constructor
 from exp_runner import ExperimentBuilder
 from utils import set_optimizer_scheduler
 import torch
@@ -18,7 +17,7 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name, experiment_logs_dir, dev
     loader_train, loader_val, loader_test = split_data_marginal(inputs, batch_size, num_workers=num_workers)
 
     # Initialize marginal transform
-    marg_flow = Marginal_Flow(n_layers=5)
+    marg_flow = Marg_Flow_Constructor(n_layers=5)
     optimizer, scheduler = set_optimizer_scheduler(marg_flow.flow,
                                                    lr,
                                                    weight_decay,
@@ -77,7 +76,7 @@ def copula_estimator(x_inputs: torch.Tensor, y_inputs: torch.Tensor,
     loader_train, loader_val, loader_test = split_data_copula(inputs_cond, batch_size, num_workers)
 
     # Initialize Copula Transform
-    cop_flow = Cop_Flow(n_layers=5, context_dim=cond_set.shape[1])
+    cop_flow = Cop_Flow_Constructor(n_layers=5, context_dim=cond_set.shape[1])
     optimizer, scheduler = set_optimizer_scheduler(cop_flow.flow,
                                                    lr,
                                                    weight_decay,
@@ -111,17 +110,14 @@ def copula_estimator(x_inputs: torch.Tensor, y_inputs: torch.Tensor,
 
 
 def mi_estimator(cop_flow, device, obs_n=20, obs_m=10) -> float:
-    # @Todo: possibly also add ranges
-    # @Todo: think about format of mutual information
-
     ww = torch.FloatTensor(obs_m, 5).uniform_(0, 1)
     ww = torch.distributions.normal.Normal(0, 1).icdf(ww) # @Todo: make this normal directly? why not?
 
-    #cop_samples = cop_flow.sample(num_samples=obs_n, context=ww.to(device)) # @Todo: make this run in samples
     log_density = torch.empty((ww.shape[0], obs_m))
     for mm in range(obs_m):
-        noise = cop_flow._distribution.sample(ww.shape[0])
-        cop_samples, _ = cop_flow._transform.inverse(noise, context=ww.to(device))
+        # noise = cop_flow._distribution.sample(ww.shape[0])
+        # cop_samples, _ = cop_flow._transform.inverse(noise, context=ww.to(device))
+        cop_samples = cop_flow.sample_copula(num_samples=ww.shape[0], context=ww.to(device))
         norm_distr = torch.distributions.normal.Normal(0, 1)
         log_density[:, mm] = cop_flow.log_pdf_uniform(norm_distr.cdf(cop_samples), norm_distr.cdf(ww).to(device)) # @Todo: triple check if this is correct
     

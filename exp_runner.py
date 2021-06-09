@@ -143,7 +143,7 @@ class ExperimentBuilder(nn.Module):
         inputs_batch = inputs_batch.float().to(device=self.device)  # convert data to pytorch tensors and send to the computation device
         if cond_inputs_batch is not None:
             cond_inputs_batch = cond_inputs_batch.float().to(device=self.device)
-        log_density = self.model.log_prob(inputs_batch, cond_inputs_batch) #@Todo: put model into eval mode somehow
+        log_density = self.model.log_prob(inputs_batch, cond_inputs_batch)
         loss = -torch.mean(log_density)
 
         return loss.cpu().data.numpy()
