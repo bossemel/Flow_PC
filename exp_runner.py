@@ -16,7 +16,7 @@ from utils.plotting import plot_result_graphs
 class ExperimentBuilder(nn.Module):
     def __init__(self, network_model, optimizer,
                  scheduler, error, exp_name, flow_name, num_epochs, train_data, val_data,
-                 test_data, use_gpu, continue_from_epoch=-1):
+                 test_data, device, continue_from_epoch=-1):
         """
         Initializes an ExperimentBuilder object. Such an object takes care of running training and evaluation of a deep net
         on a given dataset. It also takes care of saving per epoch models and automatically inferring the best val model
@@ -28,7 +28,6 @@ class ExperimentBuilder(nn.Module):
         :param val_data: An object of the DataProvider type. Contains the val set.
         :param test_data: An object of the DataProvider type. Contains the test set.
         :param weight_decay_coefficient: A float indicating the weight decay to use with the adam optimizer.
-        :param use_gpu: A boolean indicating whether to use a GPU or not.
         :param continue_from_epoch: An int indicating whether we'll start from scrach (-1) or whether we'll reload a previously saved model of epoch 'continue_from_epoch' and continue training from there.
         """
         super(ExperimentBuilder, self).__init__()
@@ -38,15 +37,8 @@ class ExperimentBuilder(nn.Module):
         self.flow_name = flow_name
         self.model = network_model
 
-        if torch.cuda.device_count() > 1 and use_gpu:
-            self.device = torch.cuda.current_device()
-            self.model.to(self.device)
-            self.model = nn.DataParallel(module=self.model)
-        elif torch.cuda.device_count() == 1 and use_gpu:
-            self.device =  torch.cuda.current_device()
-            self.model.to(self.device)  # sends the model from the cpu to the gpu
-        else:
-            self.device = torch.device('cpu')  # sets the device to be CPU
+        self.device = device
+        self.model.to(self.device)
 
         self.model.reset_parameters()  # re-initialize network parameters
         self.train_data = train_data
@@ -111,7 +103,6 @@ class ExperimentBuilder(nn.Module):
         inputs_batch = inputs_batch.float().to(device=self.device) # send data to device as torch tensors
         if cond_inputs_batch is not None:
             cond_inputs_batch = cond_inputs_batch.float().to(device=self.device)
-
         log_density = self.model.log_prob(inputs_batch, cond_inputs_batch)
         loss = -torch.mean(log_density)
         self.optimizer.zero_grad()  # set all weight grads from previous training iters to 0

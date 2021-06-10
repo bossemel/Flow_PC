@@ -1,5 +1,5 @@
 import numpy as np
-from flows import Cop_Flow_Constructor, Marg_Flow_Constructor
+from flows import cop_flow_constructor, marg_flow_constructor
 from exp_runner import ExperimentBuilder
 from utils import set_optimizer_scheduler
 import torch
@@ -17,24 +17,24 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name, device, lr=0.001, weight
     loader_train, loader_val, loader_test = split_data_marginal(inputs, batch_size, num_workers=num_workers)
 
     # Initialize marginal transform
-    marg_flow = Marg_Flow_Constructor(n_layers=5)
-    optimizer, scheduler = set_optimizer_scheduler(marg_flow.flow,
+    marg_flow = marg_flow_constructor(n_layers=5)
+    optimizer, scheduler = set_optimizer_scheduler(marg_flow,
                                                    lr,
                                                    weight_decay,
                                                    amsgrad,
                                                    num_epochs)
 
-    experiment = ExperimentBuilder(network_model=marg_flow.flow,
+    experiment = ExperimentBuilder(network_model=marg_flow,
                                    optimizer=optimizer,
                                    scheduler=scheduler,
                                    error=nll_error,
                                    exp_name=exp_name,
                                    flow_name= 'mf_' + str(variable_num),
                                    num_epochs=num_epochs,
-                                   use_gpu=torch.cuda.is_available(),
                                    train_data=loader_train,
                                    val_data=loader_val,
-                                   test_data=loader_test)  # build an experiment object
+                                   test_data=loader_test,
+                                   device=device)  # build an experiment object
 
 
     # Train marginal flow
@@ -90,28 +90,28 @@ def copula_estimator(x_inputs: torch.Tensor, y_inputs: torch.Tensor,
                      cond_set: torch.Tensor, exp_name, device, lr=0.001, weight_decay=0.00001,
                        amsgrad=False, num_epochs=100, batch_size=128, num_workers=12): # @Todo: find out whether this enters as a tensor or array
     # Transform into data object
-    inputs_cond = np.concatenate([x_inputs.cpu().numpy(), y_inputs.cpu().numpy(), cond_set.cpu().numpy()], axis=1)
+    inputs_cond = torch.cat([x_inputs, y_inputs, cond_set], axis=1)
     loader_train, loader_val, loader_test = split_data_copula(inputs_cond, batch_size, num_workers)
 
     # Initialize Copula Transform
-    cop_flow = Cop_Flow_Constructor(n_layers=5, context_dim=cond_set.shape[1])
-    optimizer, scheduler = set_optimizer_scheduler(cop_flow.flow,
+    cop_flow = cop_flow_constructor(n_layers=5, context_dim=cond_set.shape[1])
+    optimizer, scheduler = set_optimizer_scheduler(cop_flow,
                                                    lr,
                                                    weight_decay,
                                                    amsgrad,
                                                    num_epochs)
 
-    experiment = ExperimentBuilder(network_model=cop_flow.flow,
+    experiment = ExperimentBuilder(network_model=cop_flow,
                                    optimizer=optimizer,
                                    scheduler=scheduler,
                                    error=nll_error,
                                    exp_name=exp_name,
                                    flow_name= 'cf',
                                    num_epochs=num_epochs,
-                                   use_gpu=torch.cuda.is_available(),
                                    train_data=loader_train,
                                    val_data=loader_val,
-                                   test_data=loader_test)  # build an experiment object
+                                   test_data=loader_test,
+                                   device=device)  # build an experiment object
 
 
     # Train marginal flow

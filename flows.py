@@ -7,30 +7,16 @@ import torch
 import torch.nn as nn
 
 
-class Cop_Flow_Constructor:
-    def __init__(self, n_layers, context_dim, hidden_units=64):
-        self.n_layers = n_layers
-        self.hidden_units = hidden_units
-        self.context_dim = context_dim
+def cop_flow_constructor(n_layers, context_dim, hidden_units=64):
 
-        # Define an invertible transformation.
-        transform = transforms.CompositeTransform([
-            self.create_transform(ii) for ii in range(self.n_layers)])
-
-        # Define a base distribution.
-        base_distribution = distributions.StandardNormal(shape=[2])
-
-        # Combine into a flow.
-        self.flow = Cop_Flow(transform=transform, distribution=base_distribution)
-
-    def create_transform(self, ii):
+    def create_transform(ii, hidden_units, context_dim):
         return transforms.PiecewiseRationalQuadraticCouplingTransform(
             mask=utils.create_alternating_binary_mask(features=2, even=(ii % 2 == 0)),
             transform_net_create_fn=lambda in_features, out_features: ResidualNet(
                 in_features=in_features,
                 out_features=out_features,
-                hidden_features=self.hidden_units,
-                context_features=self.context_dim,
+                hidden_features=hidden_units,
+                context_features=context_dim,
                 # num_blocks=self.n_blocks_c,
                 # dropout_probability=self.dropout_c,
                 # use_batch_norm=self.use_batch_norm_c
@@ -42,23 +28,19 @@ class Cop_Flow_Constructor:
             # num_bins=self.n_bins_c,
             # apply_unconditional_transform=self.unconditional_transform
         )
+    # Define an invertible transformation.
+    transform = transforms.CompositeTransform([
+        create_transform(ii, hidden_units, context_dim) for ii in range(n_layers)])
+
+    # Define a base distribution.
+    base_distribution = distributions.StandardNormal(shape=[2])
+
+    # Combine into a flow.
+    return Cop_Flow(transform=transform, distribution=base_distribution)
 
 
-class Marg_Flow_Constructor:
-    def __init__(self, n_layers):
-        self.n_layers = n_layers
-        # @Todo: add other options
-        # Define an invertible transformation.
-        transform = transforms.CompositeTransform([
-            self.create_transform() for ii in range(self.n_layers)])
-
-        # Define a base distribution.
-        base_distribution = distributions.StandardNormal(shape=[1])
-
-        # Combine into a flow.
-        self.flow = Basic_Flow(transform=transform, distribution=base_distribution)
-
-    def create_transform(self):
+def marg_flow_constructor(n_layers):
+    def create_transform():
         # return transforms.CompositeTransform([
         #     transforms.MaskedAffineAutoregressiveTransform(features=1, hidden_features=0),
         #     transforms.RandomPermutation(features=1)
@@ -81,10 +63,19 @@ class Marg_Flow_Constructor:
         return transforms.PiecewiseRationalQuadraticCDF(
                 shape=[1])
 
+    transform = transforms.CompositeTransform([create_transform() for ii in range(n_layers)])
+
+    # Define a base distribution.
+    base_distribution = distributions.StandardNormal(shape=[1])
+
+    # Combine into a flow.
+    return Basic_Flow(transform=transform, distribution=base_distribution)
+
 
 class Basic_Flow(flows.Flow):
     def __init__(self, transform, distribution):
-        super().__init__(transform=transform, distribution=distribution)
+        super(Basic_Flow, self).__init__(transform=transform, distribution=distribution)
+
         self.layer_dict = nn.ModuleDict()
 
     def reset_parameters(self):
@@ -148,7 +139,7 @@ class Basic_Flow(flows.Flow):
 
 class Cop_Flow(Basic_Flow):
     def __init__(self, transform, distribution):
-        super().__init__(transform=transform, distribution=distribution)
+        super(Cop_Flow, self).__init__(transform=transform, distribution=distribution)
         self.norm_distr = torch.distributions.normal.Normal(0, 1)
 
     def sample(self, num_samples, context=None):

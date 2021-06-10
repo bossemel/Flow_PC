@@ -6,9 +6,9 @@ from torch.utils.data import Dataset
 class DataProvider(Dataset): # @Todo: debug this. possibly use pytorch data loader class...
 
     def __init__(self, inputs: np.ndarray, cond_inputs: np.ndarray = None):
-        self.inputs = torch.from_numpy(inputs).float()
+        self.inputs = inputs
         if cond_inputs is not None:
-            self.cond_inputs = torch.from_numpy(cond_inputs).float()
+            self.cond_inputs = cond_inputs
         else:
             self.cond_inputs = None
 
