@@ -74,7 +74,7 @@ def marg_flow_constructor(n_layers):
 
 class Basic_Flow(flows.Flow):
     def __init__(self, transform, distribution):
-        super(Basic_Flow, self).__init__(transform=transform, distribution=distribution)
+        super().__init__(transform=transform, distribution=distribution)
 
         self.layer_dict = nn.ModuleDict()
 
@@ -139,7 +139,7 @@ class Basic_Flow(flows.Flow):
 
 class Cop_Flow(Basic_Flow):
     def __init__(self, transform, distribution):
-        super(Cop_Flow, self).__init__(transform=transform, distribution=distribution)
+        super().__init__(transform=transform, distribution=distribution)
         self.norm_distr = torch.distributions.normal.Normal(0, 1)
 
     def sample(self, num_samples, context=None):

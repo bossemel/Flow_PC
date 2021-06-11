@@ -6,7 +6,6 @@ from nflows import flows
 import torch.nn as nn
 from sklearn.model_selection import train_test_split
 from data_provider import DataProvider
-from torch.utils.data import DataLoader
 import numpy as np 
 import warnings
 eps = 1e-10
@@ -29,42 +28,6 @@ def create_folders(args):
     Path(args.figures_path).mkdir(parents=True, exist_ok=True)
     Path(args.experiment_logs).mkdir(parents=True, exist_ok=True)
     Path(args.experiment_saved_models).mkdir(parents=True, exist_ok=True)
-
-
-
-def split_data_marginal(inputs, batch_size, num_workers=12):
-    # Transform into data object
-    data_train, data_val = train_test_split(inputs, test_size=0.2)
-    data_val, data_test = train_test_split(inputs, test_size=0.5)
-
-    data_train = DataProvider(data_train)
-    loader_train = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-                                                        # @Todo: take these arguments from somewhere else
-    data_val = DataProvider(data_val)
-    loader_val = DataLoader(data_val, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-
-    data_test = DataProvider(data_test)
-    loader_test = DataLoader(data_test, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-                                                        # @Todo: take these arguments from somewhere else
-    return loader_train, loader_val, loader_test
-
-
-def split_data_copula(inputs_cond, batch_size, num_workers):
-    data_train, data_val = train_test_split(inputs_cond, test_size=0.20)
-    data_val, data_test = train_test_split(data_val, test_size=0.50)
-
-    data_train = DataProvider(inputs=data_train[:, :2], cond_inputs=data_train[:, 2:])
-    loader_train = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-                                            # @Todo: take these arguments from somewhere else
-
-    data_val = DataProvider(inputs=data_val[:, :2], cond_inputs=data_val[:, 2:])
-    loader_val = DataLoader(data_val, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-                                            # @Todo: take these arguments from somewhere else
-
-    data_test = DataProvider(inputs=data_test[:, :2], cond_inputs=data_test[:, 2:])
-    loader_test = DataLoader(data_test, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-                                            # @Todo: take these arguments from somewhere else
-    return loader_train, loader_val, loader_test
 
 
 # class Fixed_sampler(flows.Flow):

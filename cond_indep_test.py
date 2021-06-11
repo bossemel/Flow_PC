@@ -3,8 +3,9 @@ from flows import cop_flow_constructor, marg_flow_constructor
 from exp_runner import ExperimentBuilder
 from utils import set_optimizer_scheduler
 import torch
-from utils import nll_error, create_folders, split_data_marginal, split_data_copula
+from utils import nll_error, create_folders
 from options import TrainOptions
+from data_provider import split_data_marginal,  split_data_copula
 import os
 import json
 import random
@@ -12,7 +13,7 @@ import scipy.stats
 eps = 1e-10
 
 def marginal_transform_1d(inputs: np.ndarray, exp_name, device, lr=0.001, weight_decay=0.00001,
-                          amsgrad=False, num_epochs=100, batch_size=128, num_workers=12, use_gpu=True, variable_num=0) -> np.ndarray:
+                          amsgrad=False, num_epochs=100, batch_size=128, num_workers=0, variable_num=0) -> np.ndarray:
     # Transform into data object
     loader_train, loader_val, loader_test = split_data_marginal(inputs, batch_size, num_workers=num_workers)
 
@@ -65,7 +66,7 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name, device, lr=0.001, weight
 
 
 def marginal_transform(inputs: np.ndarray, exp_name, device, lr=0.001, weight_decay=0.00001,
-                       amsgrad=False, num_epochs=100, batch_size=128) -> np.ndarray:
+                       amsgrad=False, num_epochs=100, batch_size=128, num_workers=0) -> np.ndarray:
     if inputs.shape[1] > 1:
         outputs = torch.empty_like(torch.from_numpy(inputs)).to(device).detach()
         for dim in range(inputs.shape[1]):
@@ -76,7 +77,8 @@ def marginal_transform(inputs: np.ndarray, exp_name, device, lr=0.001, weight_de
                                                              amsgrad=amsgrad,
                                                              num_epochs=num_epochs,
                                                              batch_size=batch_size,
-                                                             variable_num=dim).reshape(-1, 1).detach()
+                                                             variable_num=dim,
+                                                             num_workers=num_workers).reshape(-1, 1).detach()
     elif inputs.shape[1] == 1:
         outputs = marginal_transform_1d(inputs=inputs,  exp_name=exp_name,
                                         device=device, lr=lr, weight_decay=weight_decay, amsgrad=amsgrad,
@@ -88,10 +90,10 @@ def marginal_transform(inputs: np.ndarray, exp_name, device, lr=0.001, weight_de
 
 def copula_estimator(x_inputs: torch.Tensor, y_inputs: torch.Tensor,
                      cond_set: torch.Tensor, exp_name, device, lr=0.001, weight_decay=0.00001,
-                       amsgrad=False, num_epochs=100, batch_size=128, num_workers=12): # @Todo: find out whether this enters as a tensor or array
+                       amsgrad=False, num_epochs=100, batch_size=128, num_workers=0):
     # Transform into data object
-    inputs_cond = torch.cat([x_inputs, y_inputs, cond_set], axis=1)
-    loader_train, loader_val, loader_test = split_data_copula(inputs_cond, batch_size, num_workers)
+    loader_train, loader_val, loader_test = split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers)
+    print(type(x_inputs), type(y_inputs), type(cond_set))
 
     # Initialize Copula Transform
     cop_flow = cop_flow_constructor(n_layers=5, context_dim=cond_set.shape[1])
@@ -141,12 +143,12 @@ def mi_estimator(cop_flow, device, obs_n=20, obs_m=10) -> float:
         log_density[:, mm] = cop_flow.log_pdf_uniform(norm_distr.cdf(cop_samples), norm_distr.cdf(ww).to(device)) # @Todo: triple check if this is correct
     
     
-    mi = torch.mean(log_density) # @Todo: For this to work, we need ***uniform*** copula density, meaning we need to transwer this density to a true copula!
+    mi = torch.mean(log_density) 
 
     return mi.cpu().numpy()
 
 
-def hypothesis_test(mutual_information: float, threshold: float = 0.05) -> bool: # @Todo: something like num obs?
+def hypothesis_test(mutual_information: float, threshold: float = 0.05) -> bool:
     statistic, pvalue = scipy.stats.ttest_1samp(mutual_information, 0, axis=0, nan_policy='raise')
     print('Test statistic: {}, P-Value: {}'.format(statistic, pvalue))
     print('Threshold: ', threshold)
@@ -161,12 +163,12 @@ def hypothesis_test(mutual_information: float, threshold: float = 0.05) -> bool:
 
 
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
-                      cond_set: np.ndarray, exp_name, device, num_epochs=100, num_runs=50, batch_size=64) -> bool:
-    x_uni = marginal_transform(x_input, exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size)
-    y_uni = marginal_transform(y_input, exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size)
-    cond_uni = marginal_transform(cond_set, exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size)
+                      cond_set: np.ndarray, exp_name, device, num_epochs=100, num_runs=50, batch_size=64, num_workers=0) -> bool:
+    x_uni = marginal_transform(x_input, exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size, num_workers=num_workers)
+    y_uni = marginal_transform(y_input, exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size, num_workers=num_workers)
+    cond_uni = marginal_transform(cond_set, exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size, num_workers=num_workers)
 
-    cop_flow = copula_estimator(x_uni, y_uni, cond_uni, exp_name=exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size)
+    cop_flow = copula_estimator(x_uni, y_uni, cond_uni, exp_name=exp_name, device=device, num_epochs=num_epochs, batch_size=batch_size, num_workers=num_workers)
 
     with torch.no_grad():
         cop_flow.eval()
@@ -196,7 +198,7 @@ if __name__ == '__main__':
 
     # Cuda settings
     use_cuda = torch.cuda.is_available()
-    args.device = torch.device("cuda:0" if use_cuda else "cpu")
+    args.device = torch.cuda.current_device()
 
     # Set Seed
     np.random.seed(args.random_seed)
@@ -207,11 +209,10 @@ if __name__ == '__main__':
 
     # Get inputs
     obs = 50
-    # args.epochs = 1
     x = np.random.uniform(size=(obs, 1))
     y = np.random.uniform(size=(obs, 1))
     z = np.random.uniform(size=(obs, 5))
 
     #
     print(copula_indep_test(x, y, z, exp_name=args.exp_name, 
-                            device=args.device, num_epochs=args.epochs, batch_size=args.batch_size))
+                            device=args.device, num_epochs=args.epochs, batch_size=args.batch_size, num_workers=args.num_workers))

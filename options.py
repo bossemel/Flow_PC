@@ -25,6 +25,8 @@ class TrainOptions:
 
         parser.add_argument(
             '--epochs', type=int, default=100, help='number of epochs to train (default: 100)')
+        parser.add_argument(
+            '--num_workers', type=int, default=0, help='number of workers in the data loader (default: 0)')
         # CM Options
 
         # Architecture

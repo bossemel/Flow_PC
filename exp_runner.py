@@ -168,8 +168,8 @@ class ExperimentBuilder(nn.Module):
             current_epoch_losses = {"train_loss": [], "val_loss": []}
             self.current_epoch = epoch_idx
             with tqdm.tqdm(total=len(self.train_data)) as pbar_train:  # create a progress bar for training
-                for idx, inputs_batch in enumerate(self.train_data):  # get data batches
-                    if type(inputs_batch) is list:
+                for inputs_batch in self.train_data:  # get data batches
+                    if isinstance(inputs_batch, list):
                         inputs_batch, cond_inputs_batch = inputs_batch
                     else:
                         cond_inputs_batch = None
@@ -180,7 +180,7 @@ class ExperimentBuilder(nn.Module):
 
             with tqdm.tqdm(total=len(self.val_data)) as pbar_val:  # create a progress bar for validation
                 for inputs_batch in self.val_data:  # get data batches
-                    if type(inputs_batch) is list:
+                    if isinstance(inputs_batch, list):
                         inputs_batch, cond_inputs_batch = inputs_batch
                     else:
                         cond_inputs_batch = None
