@@ -212,9 +212,6 @@ class Distribution():
         self.distribution = distribution 
         self.sample = distribution.rvs
 
-    # def sample(num_samples):
-    #     # @Todo: 
-
 
 class DataProvider(Dataset):
     def __init__(self, inputs: np.ndarray, cond_inputs: np.ndarray = None):
@@ -306,7 +303,6 @@ def mutivariate_copula(mix, copula_='clayton', marginal='gamma', obs_=10000, dis
                                                                   mu_=mu, var_=var, alpha_=alpha)
     assert not np.isnan(np.sum(copula_samples)), '{}'.format(copula_samples[np.isnan(copula_samples)])
     return torch.from_numpy(copula_samples)
-
 
 
 if __name__ == '__main__':
