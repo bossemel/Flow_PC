@@ -21,7 +21,7 @@ def cop_flow_constructor(n_layers, context_dim, hidden_units=64):
                 # dropout_probability=self.dropout_c,
                 # use_batch_norm=self.use_batch_norm_c
             ),
-            tails='linear',
+            tails='linear',  # @Todo: get this from somewhere else
             tail_bound=16,
             # tails=self.tails,
             # tail_bound=self.tail_bound_c,

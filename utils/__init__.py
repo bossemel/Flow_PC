@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from data_provider import DataProvider
 import numpy as np 
 import warnings
-eps = 1e-10
+eps = 1e-7
 
 
 def set_optimizer_scheduler(model, lr, weight_decay, amsgrad, epochs):
