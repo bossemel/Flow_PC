@@ -27,6 +27,12 @@ class TrainOptions:
             '--epochs', type=int, default=100, help='number of epochs to train (default: 100)')
         parser.add_argument(
             '--num_workers', type=int, default=0, help='number of workers in the data loader (default: 0)')
+        parser.add_argument(
+            '--lr', type=float, default=0.00001, help='learning rate (default: 0.0001)')
+        parser.add_argument(
+            '--weight_decay', type=float, default=1e-10, help='adam optimizer weight decay')
+        parser.add_argument(
+            '--amsgrad', action='store_true', default=False)
         # CM Options
 
         # Architecture

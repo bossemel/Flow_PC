@@ -3,20 +3,6 @@ import os
 import csv
 
 
-def save_to_stats_pkl_file(experiment_log_filepath, filename, stats_dict):
-    summary_filename = os.path.join(experiment_log_filepath, filename)
-    with open("{}.pkl".format(summary_filename), "wb") as file_writer:
-        pickle.dump(stats_dict, file_writer)
-
-
-def load_from_stats_pkl_file(experiment_log_filepath, filename):
-    summary_filename = os.path.join(experiment_log_filepath, filename)
-    with open("{}.pkl".format(summary_filename), "rb") as file_reader:
-        stats = pickle.load(file_reader)
-
-    return stats
-
-
 def save_statistics(experiment_log_dir, filename, stats_dict, current_epoch, continue_from_mode=False, save_full_dict=False):
     """
     Saves the statistics in stats dict into a csv file. Using the keys as the header entries and the values as the

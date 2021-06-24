@@ -36,7 +36,7 @@ def test_copula_estimator():
     yy = torch.from_numpy(np.random.uniform(size=(obs, 1)))
     zz = torch.from_numpy(np.random.uniform(size=(obs, 5)))
 
-    copula_estimator(xx, yy, zz, 'copula_flow_test', args.device)
+    copula_estimator(xx, yy, zz, 'test_cop_flow', args.device)
 
 if __name__ == '__main__':
     test_copula_estimator()

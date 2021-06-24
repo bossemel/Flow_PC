@@ -231,20 +231,22 @@ class DataProvider(Dataset):
             return [self.inputs[idx, :], self.cond_inputs[idx, :]]
 
 
-def split_data_marginal(inputs, batch_size, num_workers=12):
+def split_data_marginal(inputs, batch_size, num_workers=12, return_datasets=False):
     # Transform into data object
     data_train, data_val = train_test_split(inputs, test_size=0.2)
-    data_val, data_test = train_test_split(inputs, test_size=0.5)
+    data_val, data_test = train_test_split(data_val, test_size=0.5)
 
-    data_train = DataProvider(data_train)
-    loader_train = torch.utils.data.DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    provider_train = DataProvider(data_train)
+    loader_train = torch.utils.data.DataLoader(provider_train, batch_size=batch_size, shuffle=True, num_workers=num_workers)
             
-    data_val = DataProvider(data_val)
-    loader_val = torch.utils.data.DataLoader(data_val, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    provider_val = DataProvider(data_val)
+    loader_val = torch.utils.data.DataLoader(provider_val, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
-    data_test = DataProvider(data_test)
-    loader_test = torch.utils.data.DataLoader(data_test, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-            
+    provider_test = DataProvider(data_test)
+    loader_test = torch.utils.data.DataLoader(provider_test, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    
+    if return_datasets:
+        return data_train, data_val, data_test, loader_train, loader_val, loader_test
     return loader_train, loader_val, loader_test
 
 

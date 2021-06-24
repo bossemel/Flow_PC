@@ -2,12 +2,7 @@ import torch.optim as optim
 import torch
 import os
 from pathlib import Path
-from nflows import flows
-import torch.nn as nn
-from sklearn.model_selection import train_test_split
-from data_provider import DataProvider
-import numpy as np 
-import warnings
+import sys
 eps = 1e-7
 
 
@@ -29,6 +24,17 @@ def create_folders(args):
     Path(args.experiment_logs).mkdir(parents=True, exist_ok=True)
     Path(args.experiment_saved_models).mkdir(parents=True, exist_ok=True)
 
+
+class HiddenPrints:
+    """Hide Prints (for grid search).
+    """
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
 
 # class Fixed_sampler(flows.Flow):
 #     def __init__(self, dependent=False):
@@ -82,41 +88,3 @@ def gaussian_change_of_var_ND(inputs: torch.Tensor, original_log_pdf, context=No
     #(output) >= 0, '{}'.format(torch.min(output))
     return output
 
-
-def js_divergence(prob_x_in_p, prob_x_in_q,
-                  prob_y_in_p, prob_y_in_q):
-    """Calculate JS-Divergence using Monte Carlo.
-    Params:
-        prob_x_in_p: p(x), x from distr p(x), array
-        prob_x_in_q: q(x), x from distr p(x), array
-        prob_y_in_p: p(y), y from distr q(y), array
-        prob_y_in_q: p(y), y from distr q(y), array
-    Returns:
-        divergence: int, JS-Divergence
-    """
-    assert prob_x_in_p.shape[0] == prob_x_in_q.shape[0]
-    assert prob_x_in_q.shape[0] == prob_y_in_p.shape[0]
-    assert prob_y_in_p.shape[0] == prob_y_in_q.shape[0]
-    mix_X = prob_x_in_p + prob_x_in_q
-    mix_Y = prob_y_in_p + prob_y_in_q
-
-    prob_x_in_p[prob_x_in_p == 0] = 0 + eps
-    prob_y_in_q[prob_y_in_q == 0] = 0 + eps
-
-    assert torch.min(mix_X) > 0
-    assert torch.min(mix_Y) > 0
-
-    KL_PM = torch.log2((2 * prob_x_in_p) / mix_X)
-    KL_PM[mix_X == 0] = 0
-    KL_PM = KL_PM.mean()
-
-    KL_QM = torch.log2((2 * prob_y_in_q) / mix_Y)
-    KL_QM[mix_Y == 0] = 0
-    KL_QM = KL_QM.mean()
-
-    divergence = (KL_PM + KL_QM) / 2
-
-    if divergence < 0 - 1e-05:
-        warnings.warn("JSD estimate below zero. JSD: {}".format(divergence))
-
-    return divergence

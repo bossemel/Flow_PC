@@ -1,5 +1,5 @@
 import scipy.stats
-from utils import js_divergence
+from eval.metrics import js_divergence
 import unittest
 import random
 import numpy as np

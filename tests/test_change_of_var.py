@@ -1,6 +1,6 @@
 import scipy.stats
 import numpy as np
-from utils import js_divergence
+from eval.metrics import js_divergence
 from utils import gaussian_change_of_var_ND
 import torch
 import unittest
@@ -8,7 +8,7 @@ import random
 
 
 
-class Test_Change_of_Var(unittest.TestCase): # @Todo: transform into tensors
+class Test_Change_of_Var(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super(Test_Change_of_Var, self).__init__(*args, **kwargs)

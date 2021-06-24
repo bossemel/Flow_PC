@@ -15,7 +15,7 @@ from utils.plotting import plot_result_graphs
 
 class ExperimentBuilder(nn.Module):
     def __init__(self, network_model, optimizer,
-                 scheduler, error, exp_name, flow_name, num_epochs, train_data, val_data,
+                 scheduler, error, exp_name, flow_name, epochs, train_data, val_data,
                  test_data, device, continue_from_epoch=-1):
         """
         Initializes an ExperimentBuilder object. Such an object takes care of running training and evaluation of a deep net
@@ -23,7 +23,7 @@ class ExperimentBuilder(nn.Module):
         to be used for evaluating the test set metrics.
         :param network_model: A pytorch nn.Module which implements a network architecture.
         :param exp_name: The name of the experiment. This is used mainly for keeping track of the experiment and creating and directory structure that will be used to save logs, model parameters and other.
-        :param num_epochs: Total number of epochs to run the experiment
+        :param epochs: Total number of epochs to run the experiment
         :param train_data: An object of the DataProvider type. Contains the training set.
         :param val_data: An object of the DataProvider type. Contains the val set.
         :param test_data: An object of the DataProvider type. Contains the test set.
@@ -71,7 +71,7 @@ class ExperimentBuilder(nn.Module):
         # Set best models to be at 0 since we are just starting
         self.best_val_model_idx = 0
         self.best_val_model_loss = 1000
-        self.num_epochs = num_epochs
+        self.epochs = epochs
         self.criterion = error #nn.CrossEntropyLoss().to(self.device)  # send the loss computation to the GPU
 
         if continue_from_epoch == -2:  # if continue from epoch is -2 then continue from latest saved model
@@ -163,7 +163,7 @@ class ExperimentBuilder(nn.Module):
         :return: The summary current_epoch_losses from starting epoch to total_epochs.
         """
         total_losses = {"train_loss": [], "val_loss": []}  # initialize a dict to keep the per-epoch metrics
-        for i, epoch_idx in enumerate(range(self.starting_epoch, self.num_epochs)):
+        for i, epoch_idx in enumerate(range(self.starting_epoch, self.epochs)):
             epoch_start_time = time.time()
             current_epoch_losses = {"train_loss": [], "val_loss": []}
             self.current_epoch = epoch_idx
@@ -176,7 +176,7 @@ class ExperimentBuilder(nn.Module):
                     loss = self.run_train_iter(inputs_batch=inputs_batch, cond_inputs_batch=cond_inputs_batch)  # take a training iter step
                     current_epoch_losses["train_loss"].append(loss)  # add current iter loss to the train loss list
                     pbar_train.update(1)
-                    pbar_train.set_description("loss: {:.4f}".format(loss))
+                    pbar_train.set_description("loss:    {:.4f}".format(loss))
 
             with tqdm.tqdm(total=len(self.val_data)) as pbar_val:  # create a progress bar for validation
                 for inputs_batch in self.val_data:  # get data batches
@@ -187,7 +187,7 @@ class ExperimentBuilder(nn.Module):
                     loss = self.run_evaluation_iter(inputs_batch=inputs_batch, cond_inputs_batch=cond_inputs_batch)  # run a validation iter
                     current_epoch_losses["val_loss"].append(loss)  # add current iter loss to val loss list.
                     pbar_val.update(1)  # add 1 step to the progress bar
-                    pbar_val.set_description("loss: {:.4f}".format(loss))
+                    pbar_val.set_description("loss:     {:.4f}".format(loss))
             val_mean_loss = np.mean(current_epoch_losses['val_loss'])
             if val_mean_loss < self.best_val_model_loss:  # if current epoch's mean val acc is greater than the saved best val loss then
                 self.best_val_model_loss = val_mean_loss  # set the best val model acc to be current epoch's val loss
@@ -248,9 +248,9 @@ class ExperimentBuilder(nn.Module):
 
 
         result_dict = load_statistics(self.experiment_logs, filename='summary.csv')
-        print(result_dict)
 
         plot_result_graphs(figures_path=self.figures_path, exp_name=self.exp_name, 
                            stats=result_dict, flow_name=self.flow_name)
 
         return total_losses, test_losses
+
