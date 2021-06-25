@@ -16,7 +16,7 @@ from utils.plotting import plot_result_graphs
 class ExperimentBuilder(nn.Module):
     def __init__(self, network_model, optimizer,
                  scheduler, error, exp_name, flow_name, epochs, train_data, val_data,
-                 test_data, device, continue_from_epoch=-1):
+                 test_data, device, continue_from_epoch=-1, disable_tqdm=False):
         """
         Initializes an ExperimentBuilder object. Such an object takes care of running training and evaluation of a deep net
         on a given dataset. It also takes care of saving per epoch models and automatically inferring the best val model
@@ -44,6 +44,8 @@ class ExperimentBuilder(nn.Module):
         self.train_data = train_data
         self.val_data = val_data
         self.test_data = test_data
+
+        self.disable_tqdm = disable_tqdm
 
         #print('System learnable parameters')
         total_num_parameters = 0
@@ -167,7 +169,7 @@ class ExperimentBuilder(nn.Module):
             epoch_start_time = time.time()
             current_epoch_losses = {"train_loss": [], "val_loss": []}
             self.current_epoch = epoch_idx
-            with tqdm.tqdm(total=len(self.train_data)) as pbar_train:  # create a progress bar for training
+            with tqdm.tqdm(total=len(self.train_data), disable=self.disable_tqdm) as pbar_train:  # create a progress bar for training
                 for inputs_batch in self.train_data:  # get data batches
                     if isinstance(inputs_batch, list):
                         inputs_batch, cond_inputs_batch = inputs_batch
@@ -178,7 +180,7 @@ class ExperimentBuilder(nn.Module):
                     pbar_train.update(1)
                     pbar_train.set_description("loss:    {:.4f}".format(loss))
 
-            with tqdm.tqdm(total=len(self.val_data)) as pbar_val:  # create a progress bar for validation
+            with tqdm.tqdm(total=len(self.val_data), disable=self.disable_tqdm) as pbar_val:  # create a progress bar for validation
                 for inputs_batch in self.val_data:  # get data batches
                     if isinstance(inputs_batch, list):
                         inputs_batch, cond_inputs_batch = inputs_batch

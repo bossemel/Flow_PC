@@ -28,12 +28,25 @@ class TrainOptions:
         parser.add_argument(
             '--num_workers', type=int, default=0, help='number of workers in the data loader (default: 0)')
         parser.add_argument(
-            '--lr', type=float, default=0.00001, help='learning rate (default: 0.0001)')
+            '--lr_m', type=float, default=0.0001, help='learning rate (default: 0.0001)')
         parser.add_argument(
-            '--weight_decay', type=float, default=1e-10, help='adam optimizer weight decay')
+            '--lr_c', type=float, default=0.0001, help='learning rate (default: 0.0001)')
         parser.add_argument(
-            '--amsgrad', action='store_true', default=False)
+            '--weight_decay_m', type=float, default=1e-10, help='adam optimizer weight decay')
+        parser.add_argument(
+            '--weight_decay_c', type=float, default=1e-10, help='adam optimizer weight decay')
+        parser.add_argument(
+            '--amsgrad_m', action='store_true', default=False)
+        parser.add_argument(
+            '--amsgrad_c', action='store_true', default=False)
         # CM Options
+
+        parser.add_argument(
+            '--n_layers_m', type=int, default=5, help='adam optimizer weight decay')
+        parser.add_argument(
+            '--n_layers_c', type=int, default=5, help='adam optimizer weight decay')
+        parser.add_argument(
+            '--num_hid_layers', type=int, default=4, help='adam optimizer weight decay')
 
         # Architecture
         # parser.add_argument(

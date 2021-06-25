@@ -11,6 +11,7 @@ import os
 import pyvinecopulib as pv
 import random
 from pathlib import Path
+import sklearn
 from utils.copula_sampling import sample_clayton, sample_frank, sample_gumbel, copula_pdf
 eps = 1e-07
 
@@ -236,6 +237,12 @@ def split_data_marginal(inputs, batch_size, num_workers=12, return_datasets=Fals
     data_train, data_val = train_test_split(inputs, test_size=0.2)
     data_val, data_test = train_test_split(data_val, test_size=0.5)
 
+    # Normalize
+    scaler = sklearn.preprocessing.StandardScaler()
+    data_train = scaler.fit_transform(data_train)
+    data_val = scaler.transform(data_val)
+    data_test = scaler.transform(data_test)
+
     provider_train = DataProvider(data_train)
     loader_train = torch.utils.data.DataLoader(provider_train, batch_size=batch_size, shuffle=True, num_workers=num_workers)
             
@@ -250,12 +257,29 @@ def split_data_marginal(inputs, batch_size, num_workers=12, return_datasets=Fals
     return loader_train, loader_val, loader_test
 
 
+class TorchStandardScaler:
+  def fit(self, x):
+    self.mean = x.mean(0, keepdim=True)
+    self.std = x.std(0, unbiased=False, keepdim=True)
+  def transform(self, x):
+    x -= self.mean
+    x /= (self.std + 1e-7)
+    return x
+
+
 def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers):
     inputs_cond = torch.cat([x_inputs, y_inputs, cond_set], axis=1)
 
     data_train, data_val = train_test_split(inputs_cond, test_size=0.20)
     data_val, data_test = train_test_split(data_val, test_size=0.50)
 
+    # Normalize
+    scaler = TorchStandardScaler()
+    scaler.fit(data_train)
+    data_train = scaler.transform(data_train)
+    data_val = scaler.transform(data_val)
+    data_test = scaler.transform(data_test)
+    
     data_train = DataProvider(inputs=data_train[:, :2], cond_inputs=data_train[:, 2:])
     loader_train = torch.utils.data.DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
 

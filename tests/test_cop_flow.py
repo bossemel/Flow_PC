@@ -36,7 +36,12 @@ def test_copula_estimator():
     yy = torch.from_numpy(np.random.uniform(size=(obs, 1)))
     zz = torch.from_numpy(np.random.uniform(size=(obs, 5)))
 
-    copula_estimator(xx, yy, zz, 'test_cop_flow', args.device)
+    kwargs = {'n_layers': args.n_layers_c,
+              'lr': args.lr_c,
+              'weight_decay': args.weight_decay_c,
+              'amsgrad': args.amsgrad_c}
+
+    copula_estimator(xx, yy, zz, 'test_cop_flow', args.device, **kwargs)
 
 if __name__ == '__main__':
     test_copula_estimator()

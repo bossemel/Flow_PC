@@ -35,7 +35,12 @@ def test_marginal_estimator():
     args.epochs = 1
     xx = np.random.uniform(size=(obs, 1))
 
-    outputs = marginal_transform_1d(xx, 'test_marg_flow', args.device) # @Todo: return model instead?
+    kwargs = {'n_layers': args.n_layers_m,
+              'lr': args.lr_m,
+              'weight_decay': args.weight_decay_m,
+              'amsgrad': args.amsgrad_m}
+
+    outputs = marginal_transform_1d(xx, 'test_marg_flow', args.device, **kwargs)
 
 
 if __name__ == '__main__':

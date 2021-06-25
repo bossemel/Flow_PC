@@ -3,6 +3,7 @@ import torch
 import os
 from pathlib import Path
 import sys
+import numpy as np
 eps = 1e-7
 
 
@@ -88,3 +89,102 @@ def gaussian_change_of_var_ND(inputs: torch.Tensor, original_log_pdf, context=No
     #(output) >= 0, '{}'.format(torch.min(output))
     return output
 
+
+def random_search(estimator, flow_name, loader_train, loader_val, loader_test, device, 
+                  experiment_logs, iterations, epochs, flow_type='marg_flow'):
+    results_dict = {}
+    tested_combinations = []
+    best_loss = 1000
+    ii = 0
+    while ii < iterations:
+        n_layers = np.random.choice(range(1, 10))
+        hidden_units = 2**np.random.choice(range(1, 7))
+        n_blocks = np.random.choice(range(1, 10))
+        n_bins = 5 * np.random.choice(range(2, 10))
+        lr = 1 / 10**np.random.choice(range(2, 5))
+        weight_decay = 1 / 10**(np.random.choice(range(2, 15)))
+        tail_bound = 2**np.random.choice(range(5, 8)).item()
+        amsgrad = np.random.choice([True, False])
+        clip_grad_norm = np.random.choice([True, False])
+        identity_init = np.random.choice([True, False])
+        tails = np.random.choice(['linear', None])
+
+        kwargs = {'n_layers': n_layers,
+                    'hidden_units': hidden_units,
+                    'n_blocks': n_blocks,
+                    'n_bins': n_bins,
+                    'lr': lr,
+                    'weight_decay': weight_decay,
+                    'tail_bound': tail_bound,
+                    'amsgrad': amsgrad,
+                    'clip_grad_norm': clip_grad_norm,
+                    'identity_init': identity_init,
+                    'tails': tails}
+        if flow_type == 'cop_flow':
+            dropout = 0.05 * np.random.choice(range(1, 6))
+            use_batch_norm = np.random.choice([True, False])
+            kwargs['dropout'] = dropout
+            kwargs['use_batch_norm'] = use_batch_norm
+            current_hyperparams = (n_layers,
+                                   hidden_units,
+                                   n_blocks,
+                                   n_bins,
+                                   dropout,
+                                   lr,
+                                   weight_decay,
+                                   tail_bound,
+                                   use_batch_norm,
+                                   amsgrad,
+                                   clip_grad_norm,
+                                   identity_init,
+                                   tails)
+
+        elif flow_type == 'marg_flow':
+            current_hyperparams = (n_layers,
+                                   hidden_units,
+                                   n_blocks,
+                                   n_bins,
+                                   lr,
+                                   weight_decay,
+                                   clip_grad_norm,
+                                   tail_bound,
+                                   identity_init,
+                                   tails)
+
+        else:
+            raise ValueError('Unknown Flow type')
+
+        if current_hyperparams not in tested_combinations:
+            if flow_type == 'cop_flow':
+                hyperparams_string = 'n_layers, hidden_units, n_blocks, n_bins, dropout, lr, weight_decay, \
+                tail_bound, batch_norm, amsgrad, clip_grad'
+            else:
+                hyperparams_string = 'n_layers, hidden_units, n_blocks, n_bins, lr, weight_decay, clip_grad_norm, \
+                tail_bound, identity_init_m, tails_m'
+            print('{}: {}'.format(hyperparams_string, current_hyperparams))
+            with HiddenPrints():
+                experiment, experiment_metrics, __ = estimator(loader_train=loader_train, 
+                                                               loader_val=loader_val, 
+                                                               loader_test=loader_test, 
+                                                               exp_name='random_search', 
+                                                               device=device, 
+                                                               epochs=epochs, 
+                                                               num_workers=0, 
+                                                               variable_num=0,
+                                                               disable_tqdm=True,
+                                                               **kwargs)
+            results_dict[current_hyperparams] = (experiment.best_val_model_idx, experiment.best_val_model_loss)
+            with open(os.path.join(experiment_logs, 'random_search.txt'), 'w') as ff:
+                ff.write(str(results_dict))
+            if experiment.best_val_model_loss < best_loss:
+                best_loss = experiment.best_val_model_loss
+                best_epoch = experiment.best_val_model_idx
+                best_hyperparams = current_hyperparams
+            tested_combinations.append(current_hyperparams)
+            ii += 1
+
+    print('Random search complete for {}'.format(flow_name))
+    print('Best hyperparams: {}'.format(best_hyperparams))
+    print('Lowest Val Loss: {}'.format(best_loss))
+    with open(os.path.join(experiment_logs, 'random_search.txt'), 'a') as ff:
+        ff.write('Best hyperparams: {} Lowest Val Loss: {} Best Epoch: {}'.format(best_hyperparams, best_loss, best_epoch))

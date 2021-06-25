@@ -28,7 +28,12 @@ def test_copula_estimator():
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
 
-    cop_flow = copula_estimator(x_uni, y_uni, cond_uni, num_epochs=1,  exp_name='testing', device=device)
+    kwargs = {'n_layers': args.n_layers_c,
+              'lr': args.lr_c,
+              'weight_decay': args.weight_decay_c,
+              'amsgrad': args.amsgrad_c}
+
+    cop_flow = copula_estimator(x_uni, y_uni, cond_uni, epochs=1, exp_name='testing', device=device, **kwargs)
 
 # # @Todo: write test for marginal estimator
 # # @Todo: write test with uniform distr for copula estimator
