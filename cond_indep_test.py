@@ -3,7 +3,7 @@ from flows import cop_flow_constructor, marg_flow_constructor
 from exp_runner import ExperimentBuilder
 from utils import set_optimizer_scheduler
 import torch
-from utils import nll_error, create_folders
+from utils import nll_error, create_folders, set_seeds
 from options import TrainOptions
 from data_provider import split_data_marginal,  split_data_copula
 import os
@@ -196,11 +196,7 @@ if __name__ == '__main__':
     args.device = torch.cuda.current_device()
 
     # Set Seed
-    np.random.seed(args.random_seed)
-    torch.manual_seed(args.random_seed)
-    random.seed(args.random_seed)
-    if use_cuda:
-        torch.cuda.manual_seed(args.random_seed)
+    set_seeds(seed=args.random_seed, use_cuda=use_cuda)
 
     # Get inputs
     obs = 50

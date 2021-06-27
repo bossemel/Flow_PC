@@ -64,6 +64,12 @@ class TrainOptions:
             '--high', type=float, default=1, help='upper bound for uniform distirbution')
         parser.add_argument(
             '--obs', type=int, default=10000, help='How many data samples to generate')
+
+        parser.add_argument(
+            '--copula', default='clayton',
+            choices=['gaussian', 'tdistr', 'clayton', 'frank', 'gumbel', 'independent'])
+        parser.add_argument(
+            '--theta', type=float, required=True, help='theta for copula sampling')
         # Architecture
         # parser.add_argument(
         #     '--conditional_copula', action='store_true', help='estimates the conditional copula')
@@ -109,9 +115,7 @@ class TrainOptions:
         # #     '--continue_from', type=int, default=0, help='continue random search from iteration number')
         #
         # # Dataset options
-        # parser.add_argument(
-        #     '--copula', default='clayton',
-        #     choices=['gaussian', 'tdistr', 'clayton', 'frank', 'gumbel', 'independent'])
+
         # parser.add_argument(
         #     '--marginal_1', default='gamma',
         #     choices=['gaussian', 'uniform', 'gamma', 'lognormal', 'gmm', 'mix_gamma',
@@ -121,8 +125,7 @@ class TrainOptions:
         #     choices=['gaussian', 'uniform', 'gamma', 'lognormal', 'gmm', 'mix_gamma',
         #              'mix_lognormal', 'mix_gauss_gamma'], help='marginal in second dimension')
 
-        # parser.add_argument(
-        #     '--theta', type=float, required=True, help='theta for copula sampling')
+
 
         #
         # # Options NSF - Copula estimation

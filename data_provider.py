@@ -137,7 +137,7 @@ class Marginal_Distr:
         return pdf_samples
 
 
-class CopulaDistr:
+class Copula_Distr:
     def __init__(self, copula, theta, transform=True):
 
         self.copula = copula
@@ -267,7 +267,7 @@ class TorchStandardScaler:
     return x
 
 
-def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers):
+def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers, return_datasets=False):
     inputs_cond = torch.cat([x_inputs, y_inputs, cond_set], axis=1)
 
     data_train, data_val = train_test_split(inputs_cond, test_size=0.20)
@@ -290,6 +290,9 @@ def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers):
 
     data_test = DataProvider(inputs=data_test[:, :2], cond_inputs=data_test[:, 2:])
     loader_test = torch.utils.data.DataLoader(data_test, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
+    
+    if return_datasets:
+        return data_train, data_val, data_test, loader_train, loader_val, loader_test
 
     return loader_train, loader_val, loader_test
 

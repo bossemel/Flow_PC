@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import sys
 import numpy as np
+import random
 eps = 1e-7
 
 
@@ -188,3 +189,11 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
     print('Lowest Val Loss: {}'.format(best_loss))
     with open(os.path.join(experiment_logs, 'random_search.txt'), 'a') as ff:
         ff.write('Best hyperparams: {} Lowest Val Loss: {} Best Epoch: {}'.format(best_hyperparams, best_loss, best_epoch))
+
+
+def set_seeds(seed, use_cuda):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    random.seed(seed)
+    if use_cuda:
+        torch.cuda.manual_seed(seed)
