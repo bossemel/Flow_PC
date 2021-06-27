@@ -24,7 +24,7 @@ class TrainOptions:
             '--random_seed', type=int, default=4, help='random seed')
 
         parser.add_argument(
-            '--epochs', type=int, default=100, help='number of epochs to train (default: 100)')
+            '--epochs', type=int, default=50, help='number of epochs to train (default: 100)')
         parser.add_argument(
             '--num_workers', type=int, default=0, help='number of workers in the data loader (default: 0)')
         parser.add_argument(
@@ -48,6 +48,22 @@ class TrainOptions:
         parser.add_argument(
             '--num_hid_layers', type=int, default=4, help='adam optimizer weight decay')
 
+        parser.add_argument(
+            '--marginal', default='uniform',
+            choices=['gaussian', 'uniform', 'gamma', 'lognormal', 'gmm', 'mix_gamma',
+                     'mix_lognormal', 'mix_gauss_gamma'], help='marginal in first dimension')
+        parser.add_argument(
+            '--alpha', type=float, default=5, help='alpha for gamma distribution')
+        parser.add_argument(
+            '--mu', type=float, default=0, help='mu for marginal gaussian distribution')
+        parser.add_argument(
+            '--var', type=float, default=1, help='var for marginal gaussian distribution')
+        parser.add_argument(
+            '--low', type=float, default=0, help='lower bound for uniform distribution')
+        parser.add_argument(
+            '--high', type=float, default=1, help='upper bound for uniform distirbution')
+        parser.add_argument(
+            '--obs', type=int, default=10000, help='How many data samples to generate')
         # Architecture
         # parser.add_argument(
         #     '--conditional_copula', action='store_true', help='estimates the conditional copula')
@@ -104,20 +120,10 @@ class TrainOptions:
         #     '--marginal_2', default='gamma',
         #     choices=['gaussian', 'uniform', 'gamma', 'lognormal', 'gmm', 'mix_gamma',
         #              'mix_lognormal', 'mix_gauss_gamma'], help='marginal in second dimension')
-        # parser.add_argument(
-        #     '--obs', type=int, default=10000, help='How many data samples to generate')
+
         # parser.add_argument(
         #     '--theta', type=float, required=True, help='theta for copula sampling')
-        # parser.add_argument(
-        #     '--alpha', type=float, default=5, help='alpha for gamma distribution')
-        # parser.add_argument(
-        #     '--mu', type=float, default=0, help='mu for marginal gaussian distribution')
-        # parser.add_argument(
-        #     '--var', type=float, default=1, help='var for marginal gaussian distribution')
-        # parser.add_argument(
-        #     '--low', type=float, default=0, help='lower bound for uniform distribution')
-        # parser.add_argument(
-        #     '--high', type=float, default=1, help='upper bound for uniform distirbution')
+
         #
         # # Options NSF - Copula estimation
         # parser.add_argument(

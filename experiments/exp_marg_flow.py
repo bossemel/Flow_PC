@@ -11,7 +11,7 @@ from utils.load_and_save import save_statistics
 import scipy.stats
 from statsmodels.distributions.empirical_distribution import ECDF
 from utils import create_folders, random_search
-from data_provider import split_data_marginal
+from data_provider import split_data_marginal, Marginal_Distr
 from options import TrainOptions
 from eval.plots import visualize1d
 eps = 1e-10
@@ -26,7 +26,7 @@ def ecdf_transform(data_train, data_test):
     gaussian_samples = norm_distr.ppf(uniform_samples)
     return -np.mean(norm_distr.logpdf(gaussian_samples))
 
-def exp_marg_transform():
+def exp_marg_transform(inputs):
 
     # Training settings
     args = TrainOptions().parse()   # get training options
@@ -48,28 +48,25 @@ def exp_marg_transform():
     if use_cuda:
         torch.cuda.manual_seed(args.random_seed)
 
-    # Get inputs
-    obs = 10000
-    #args.epochs = 1
-    inputs = np.random.standard_normal(size=(obs, 1))
-
     # Transform into data object
     data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, batch_size=128, num_workers=0, return_datasets=True)
 
-    # Run experiment
-    experiment, experiment_metrics, test_metrics = marginal_estimator(loader_train, loader_val, loader_test, args.exp_name, args.device, args.lr, args.weight_decay,
-                          args.amsgrad, args.epochs, args.batch_size, args.num_workers, 0)
+    # Run experiment 
+    experiment, experiment_metrics, test_metrics = marginal_estimator(loader_train=loader_train, 
+                                                                      loader_val=loader_val, 
+                                                                      loader_test=loader_test, 
+                                                                      exp_name=args.exp_name, 
+                                                                      device=args.device, 
+                                                                      amsgrad=args.amsgrad_m, 
+                                                                      epochs=args.epochs, 
+                                                                      num_workers=args.num_workers, 
+                                                                      variable_num=0,
+                                                                      n_layers=args.n_layers_m,
+                                                                      lr=args.lr_m,
+                                                                      weight_decay=args.weight_decay_m)
 
     # Plot results
     visualize1d(experiment.model, device=args.device, path=experiment.figures_path, true_samples=data_train, obs=1000, name='marg_flow')
-
-    # Transform
-    # with torch.no_grad():
-    #     inputs = torch.from_numpy(inputs).float().to(args.device)
-    #     outputs = experiment.model.transform_to_noise(inputs).cpu().numpy()
-        # plt.clf()
-        # plt.hist(outputs)
-        # plt.savefig('results/hist_norm')
 
     experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
 
@@ -105,13 +102,15 @@ if __name__ == '__main__':
         torch.cuda.manual_seed(args.random_seed)
 
     # Get inputs
-    obs = 10000
-    #args.epochs = 1
-    inputs = np.random.standard_normal(size=(obs, 1))
+    marginal_data = Marginal_Distr(args.marginal, mu=args.mu, var=args.var, alpha=args.alpha, low=args.low, high=args.high)
+    inputs = marginal_data.sample(args.obs)
+    
+    exp_marg_transform(inputs)
+
     experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
 
     # Transform into data object
     data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, batch_size=128, num_workers=0, return_datasets=True)
 
     #random_search(loader_train, loader_val, loader_test, args.device, experiment_logs, iterations=200, epochs=50)
-    random_search(marginal_estimator, 'random_search_marg', loader_train, loader_val, loader_test, args.device, experiment_logs, iterations=50, epochs=50)
+    random_search(marginal_estimator, 'random_search_marg', loader_train, loader_val, loader_test, args.device, experiment_logs, iterations=200, epochs=args.epochs)
