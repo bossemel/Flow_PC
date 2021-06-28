@@ -20,7 +20,7 @@ eps = 1e-10
 # @Todo: implement comparison (copula? kde?)
 # @Todo: implement visualizer
 
-def exp_cop_transform(inputs: torch.Tensor):
+def exp_cop_transform(inputs: torch.Tensor, cond_set_dim=None):
 
     # Training settings
     args = TrainOptions().parse()   # get training options
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # Training settings
     args = TrainOptions().parse()   # get training options
     args.exp_name = 'exp_cop_flow'
-    args.experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
+    args.experiment_logs = os.path.join('results', args.exp_name, 'stats')
 
     # Create Folders
     create_folders(args)
@@ -117,12 +117,17 @@ if __name__ == '__main__':
     copula_data = Copula_Distr(args.copula, theta=args.theta, transform=True)
     inputs = torch.from_numpy(copula_data.sample(args.obs)) # @Todo: create conditional inputs
     
-    exp_cop_transform(inputs)
-    exit()
-    experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
+    # exp_cop_transform(inputs)
+    #exit()
+    #experiment_logs = os.path.join('results', args.exp_name, 'stats')
 
     # Transform into data object
-    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(inputs, batch_size=args.batch_size, num_workers=0, return_datasets=True)
+    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(inputs[:, 0:1], 
+                                                                                               inputs[:, 1:2], 
+                                                                                               None, 
+                                                                                               batch_size=128, 
+                                                                                               num_workers=0, 
+                                                                                               return_datasets=True)
 
     #random_search(loader_train, loader_val, loader_test, args.device, experiment_logs, iterations=200, epochs=50)
-    random_search(copula_estimator, 'random_search_cop', loader_train, loader_val, loader_test, args.device, experiment_logs, iterations=200, epochs=args.epochs)
+    random_search(copula_estimator, 'random_search_cop', loader_train, loader_val, loader_test, args.device, args.experiment_logs, iterations=200, epochs=args.epochs_c)

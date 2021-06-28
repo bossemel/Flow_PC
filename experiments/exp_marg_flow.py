@@ -90,7 +90,7 @@ if __name__ == '__main__':
     # Training settings
     args = TrainOptions().parse()   # get training options
     args.exp_name = 'exp_marg_flow'
-    args.xperiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
+    args.experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
 
     # Create Folders
     create_folders(args)

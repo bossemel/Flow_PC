@@ -92,7 +92,7 @@ def gaussian_change_of_var_ND(inputs: torch.Tensor, original_log_pdf, context=No
 
 
 def random_search(estimator, flow_name, loader_train, loader_val, loader_test, device, 
-                  experiment_logs, iterations, epochs, flow_type='marg_flow'):
+                  experiment_logs, iterations, epochs, flow_type='marg_flow', cond_set_dim=None):
     results_dict = {}
     tested_combinations = []
     best_loss = 1000
@@ -118,7 +118,8 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
                     'amsgrad': amsgrad,
                     'clip_grad_norm': clip_grad_norm,
                     'identity_init': identity_init,
-                    'tails': tails}
+                    'tails': tails,
+                    'cond_set_dim': cond_set_dim}
         if flow_type == 'cop_flow':
             dropout = 0.05 * np.random.choice(range(1, 6))
             use_batch_norm = np.random.choice([True, False])
