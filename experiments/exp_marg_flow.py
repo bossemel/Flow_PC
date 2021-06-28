@@ -42,14 +42,17 @@ def exp_marg_transform(inputs):
     args.device = torch.cuda.current_device()
 
     # Set Seed
-    np.random.seed(args.random_seed)
-    torch.manual_seed(args.random_seed)
-    random.seed(args.random_seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    random.seed(args.seed)
     if use_cuda:
-        torch.cuda.manual_seed(args.random_seed)
+        torch.cuda.manual_seed(args.seed)
 
     # Transform into data object
-    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, batch_size=128, num_workers=0, return_datasets=True)
+    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
+                                                                                                 batch_size=args.batch_size_m, 
+                                                                                                 num_workers=0, 
+                                                                                                 return_datasets=True)
 
     # Run experiment 
     experiment, experiment_metrics, test_metrics = marginal_estimator(loader_train=loader_train, 
@@ -58,12 +61,17 @@ def exp_marg_transform(inputs):
                                                                       exp_name=args.exp_name, 
                                                                       device=args.device, 
                                                                       amsgrad=args.amsgrad_m, 
-                                                                      epochs=args.epochs, 
+                                                                      epochs=args.epochs_m, 
                                                                       num_workers=args.num_workers, 
                                                                       variable_num=0,
                                                                       n_layers=args.n_layers_m,
+                                                                      hidden_units=args.hidden_units_m,
+                                                                      n_bins=args.n_bins_m,
+                                                                      tail_bound=args.tail_bound_m,
+                                                                      identity_init=args.identity_init_m,
+                                                                      tails=args.tails_m,
                                                                       lr=args.lr_m,
-                                                                      weight_decay=args.weight_decay_m)
+                                                                      weight_decay=args.weight_decay_m)  # @Todo: make sure these are all actually used
 
     # Plot results
     visualize1d(experiment.model, device=args.device, path=experiment.figures_path, true_samples=data_train, obs=1000, name='marg_flow')
@@ -93,18 +101,29 @@ if __name__ == '__main__':
     args.device = torch.cuda.current_device()
 
     # Set Seed
-    set_seeds(seed=args.random_seed, use_cuda=use_cuda)
+    set_seeds(seed=args.seed, use_cuda=use_cuda)
 
     # Get inputs
     marginal_data = Marginal_Distr(args.marginal, mu=args.mu, var=args.var, alpha=args.alpha, low=args.low, high=args.high)
     inputs = marginal_data.sample(args.obs)
     
-    #exp_marg_transform(inputs)
-
+    # exp_marg_transform(inputs)
+    # exit()
+    
     experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
 
     # Transform into data object
-    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, batch_size=args.batch_size, num_workers=0, return_datasets=True)
+    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
+                                                                                                 batch_size=args.batch_size_m, 
+                                                                                                 num_workers=0, 
+                                                                                                 return_datasets=True)
 
-    #random_search(loader_train, loader_val, loader_test, args.device, experiment_logs, iterations=200, epochs=50)
-    random_search(marginal_estimator, 'random_search_marg', loader_train, loader_val, loader_test, args.device, experiment_logs, iterations=200, epochs=args.epochs)
+    random_search(marginal_estimator, 
+                  'random_search_marg', 
+                  loader_train, 
+                  loader_val, 
+                  loader_test, 
+                  args.device, 
+                  experiment_logs, 
+                  iterations=200, 
+                  epochs=args.epochs_m)

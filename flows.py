@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 
-def cop_flow_constructor(n_layers, context_dim, hidden_units=64, tail_bound=16, **kwargs):
+def cop_flow_constructor(n_layers, context_dim, hidden_units, tail_bound , **kwargs):
 
     def create_transform(ii, hidden_units, context_dim, tail_bound):
         return transforms.PiecewiseRationalQuadraticCouplingTransform(
@@ -40,7 +40,8 @@ def cop_flow_constructor(n_layers, context_dim, hidden_units=64, tail_bound=16, 
 
 
 
-def marg_flow_constructor(n_layers, n_bins=25, tail_bound=16, hidden_units=32, n_blocks=25, dropout=0.01, use_batch_norm=True, **kwargs): # @Todo: pass these arguments
+def marg_flow_constructor(n_layers, n_bins, tail_bound, identity_init, hidden_units, tails,
+                          dropout=0.01, use_batch_norm=True, **kwargs): # @Todo: pass these arguments
     def create_transform():
         # return transforms.CompositeTransform([
         #     transforms.MaskedAffineAutoregressiveTransform(features=1, hidden_features=0),
@@ -64,7 +65,8 @@ def marg_flow_constructor(n_layers, n_bins=25, tail_bound=16, hidden_units=32, n
             shape=[1],
             num_bins=n_bins,
             tails='linear',
-            tail_bound=tail_bound)
+            tail_bound=tail_bound,
+            identity_init=identity_init)
 
     # @Todo: find a way to include Resnet? 
     # resnet = ResidualNet(

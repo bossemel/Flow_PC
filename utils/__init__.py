@@ -100,7 +100,6 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
     while ii < iterations:
         n_layers = np.random.choice(range(1, 10))
         hidden_units = 2**np.random.choice(range(1, 7))
-        n_blocks = np.random.choice(range(1, 10))
         n_bins = 5 * np.random.choice(range(2, 10))
         lr = 1 / 10**np.random.choice(range(2, 5))
         weight_decay = 1 / 10**(np.random.choice(range(2, 15)))
@@ -112,7 +111,6 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
 
         kwargs = {'n_layers': n_layers,
                     'hidden_units': hidden_units,
-                    'n_blocks': n_blocks,
                     'n_bins': n_bins,
                     'lr': lr,
                     'weight_decay': weight_decay,
@@ -126,6 +124,9 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
             use_batch_norm = np.random.choice([True, False])
             kwargs['dropout'] = dropout
             kwargs['use_batch_norm'] = use_batch_norm
+            n_blocks = np.random.choice(range(1, 10))
+            kwargs['n_blocks'] = n_blocks
+
             current_hyperparams = (n_layers,
                                    hidden_units,
                                    n_blocks,
@@ -143,7 +144,6 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
         elif flow_type == 'marg_flow':
             current_hyperparams = (n_layers,
                                    hidden_units,
-                                   n_blocks,
                                    n_bins,
                                    lr,
                                    weight_decay,

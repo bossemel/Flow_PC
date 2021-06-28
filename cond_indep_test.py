@@ -16,7 +16,8 @@ eps = 1e-10
 def marginal_estimator(loader_train, loader_val, loader_test, exp_name, device,
                           epochs=100, variable_num=0, disable_tqdm=False, **kwargs):
     # Initialize marginal transform
-    marg_flow = marg_flow_constructor(**kwargs)
+    marg_flow = marg_flow_constructor(**kwargs) 
+
     optimizer, scheduler = set_optimizer_scheduler(marg_flow, 
                                                    lr=kwargs['lr'], 
                                                    weight_decay=kwargs['weight_decay'], 

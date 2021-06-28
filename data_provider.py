@@ -78,7 +78,7 @@ class Joint_Distr:
     def sample(self, obs_=None):
         """Returns copula samples.
         """
-        copuladistr = CopulaDistr(self.copula,
+        copuladistr = Copula_Distr(self.copula,
                                     self.theta,
                                     obs_)
         samples = copuladistr.sample(obs_=obs_, transform=False)
