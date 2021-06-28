@@ -3,11 +3,12 @@ import torch
 import numpy as np
 from options import TrainOptions
 from utils import create_folders
+from eval.plots import visualize_joint
 import os 
 import json 
 import random 
-from data_provider import split_data_copula
-
+from data_provider import split_data_copula, Copula_Distr
+eps = 1e-10
 # @Todo: write test that trains cond indep test for different inputs and evalute the results 
 # @Todo: write test that evaluted the conditional mutual information function for different given copula functions 
 
@@ -114,15 +115,88 @@ def test_hypothesis_test_5():
 #                 ii += 1
 #     assert np.mean(mi_runs) == 0
 
+class Distr_Wrapper():
+    def __init__(self, distribution):
+        self.distribution = distribution 
+    
+    def sample_copula(self, num_samples, context):
+        return torch.from_numpy(self.distribution.sample(num_samples))
 
-# def test_mi_estimator_dependent():
-#     # @Todo: create a class with a _sample function that outputs some copula values for either a conditionally independent or conditionally independent samples
-#     sampler = Fixed_sampler(dependent=True)
-#     use_cuda = True
-#     device = torch.device("cuda:0" if use_cuda else "cpu")
-#     sampler._sample(num_samples=3)
-#     mi = mi_estimator(sampler, device=device)
-#     assert mi == 0
+    def log_pdf_uniform(self, inputs, context):
+        return torch.log(torch.from_numpy(self.distribution.pdf(inputs)))
+
+
+def test_mi_estimator_dependent_clayton():
+   # Get inputs
+    copula_distr = Copula_Distr('clayton', theta=-1+eps, transform=False)
+    visualize_joint(copula_distr.sample(1000000), os.path.join('results', 'testing'), name='copula_clayton_indep')
+    copula_distr = Distr_Wrapper(copula_distr)
+    
+    use_cuda = True
+    device = torch.device("cuda:0" if use_cuda else "cpu")
+    mi = mi_estimator(copula_distr, device=device)
+    print(mi)
+    assert np.isclose(mi, 0)
+
+   # Get inputs
+    copula_distr = Copula_Distr('clayton', theta=2+eps, transform=False)
+    visualize_joint(copula_distr.sample(1000000), os.path.join('results', 'testing'), name='copula_clayton_dep')
+    copula_distr = Distr_Wrapper(copula_distr)
+    
+    use_cuda = True
+    device = torch.device("cuda:0" if use_cuda else "cpu")
+    mi = mi_estimator(copula_distr, device=device)
+    print(mi)
+    assert not np.isclose(mi, 0)
+
+
+
+def test_mi_estimator_dependent_frank():
+   # Get inputs
+    copula_distr = Copula_Distr('frank', theta=eps, transform=False)
+    visualize_joint(copula_distr.sample(100000), os.path.join('results', 'testing'), name='copula_frank_indep')
+    copula_distr = Distr_Wrapper(copula_distr)
+    
+    use_cuda = True
+    device = torch.device("cuda:0" if use_cuda else "cpu")
+    mi = mi_estimator(copula_distr, device=device)
+    print(mi)
+    assert np.isclose(mi, 0)
+
+   # Get inputs
+    copula_distr = Copula_Distr('frank', theta=20, transform=False)
+    visualize_joint(copula_distr.sample(100000), os.path.join('results', 'testing'), name='copula_frank_dep')
+    copula_distr = Distr_Wrapper(copula_distr)
+    
+    use_cuda = True
+    device = torch.device("cuda:0" if use_cuda else "cpu")
+    mi = mi_estimator(copula_distr, device=device)
+    print(mi)
+    assert not np.isclose(mi, 0)
+
+
+def test_mi_estimator_dependent_gumbel():
+   # Get inputs
+    copula_distr = Copula_Distr('gumbel', theta=1+eps, transform=False)
+    visualize_joint(copula_distr.sample(100000), os.path.join('results', 'testing'), name='copula_gumbel_indep')
+    copula_distr = Distr_Wrapper(copula_distr)
+    
+    use_cuda = True
+    device = torch.device("cuda:0" if use_cuda else "cpu")
+    mi = mi_estimator(copula_distr, device=device)
+    print(mi)
+    assert np.isclose(mi, 0)
+
+   # Get inputs
+    copula_distr = Copula_Distr('gumbel', theta=5+eps, transform=False)
+    visualize_joint(copula_distr.sample(100000), os.path.join('results', 'testing'), name='copula_gumbel_dep')
+    copula_distr = Distr_Wrapper(copula_distr)
+    
+    use_cuda = True
+    device = torch.device("cuda:0" if use_cuda else "cpu")
+    mi = mi_estimator(copula_distr, device=device)
+    print(mi)
+    assert not np.isclose(mi, 0)
 
 # def test_marginal_transform_1d():
 #     raise NotImplementedError
@@ -134,4 +208,6 @@ def test_hypothesis_test_5():
 #     raise NotImplementedError
 
 if __name__ == '__main__':
-    test_copula_estimator()
+    test_mi_estimator_dependent_clayton()
+    test_mi_estimator_dependent_frank()
+    test_mi_estimator_dependent_gumbel()

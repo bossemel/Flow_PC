@@ -135,7 +135,7 @@ def mi_estimator(cop_flow, device, obs_n=20, obs_m=10) -> float:
         log_density[:, mm] = cop_flow.log_pdf_uniform(norm_distr.cdf(cop_samples), norm_distr.cdf(ww).to(device)) # @Todo: triple check if this is correct
     
     
-    mi = torch.mean(log_density) 
+    mi = torch.mean(log_density)
 
     return mi.cpu().numpy()
 

@@ -139,8 +139,8 @@ def gumbel_cdf(theta_, uu, vv):
 
 
 def copula_pdf(copula_, theta_, uu, vv):
-    uu = remove_0_1(uu).astype('float64')
-    vv = remove_0_1(vv).astype('float64')
+    uu = remove_0_1(uu).numpy().astype('float64')
+    vv = remove_0_1(vv).numpy().astype('float64')
     assert np.min(uu) > 0 and np.max(uu) < 1, 'min: {}, max: {}'.format(np.min(uu), np.max(uu))
     assert np.min(vv) > 0 and np.max(vv) < 1, 'min: {}, max: {}'.format(np.min(vv), np.max(vv))
 

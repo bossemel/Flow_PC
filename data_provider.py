@@ -75,13 +75,13 @@ class Joint_Distr:
         self.marginal_1 = marginal_1_
         self.marginal_2 = marginal_2_
 
-    def sample(self, obs_=None):
+    def sample(self, num_samples=None):
         """Returns copula samples.
         """
-        copuladistr = Copula_Distr(self.copula,
+        copula_distr = Copula_Distr(self.copula,
                                     self.theta,
-                                    obs_)
-        samples = copuladistr.sample(obs_=obs_, transform=False)
+                                    num_samples)
+        samples = copula_distr.sample(num_samples=num_samples, transform=False)
         xx = marginal_transform(inputs=samples,
                                 marginal=self.marginal_1,
                                 mu=self.mu,
@@ -144,8 +144,8 @@ class Copula_Distr:
         self.theta = theta
         self.transform = transform
 
-    def sample(self, obs_=None, transform=None):
-        """Produce obs_ samples of 2-dimensional Copula density distribution
+    def sample(self, num_samples=None, transform=None):
+        """Produce num_samples samples of 2-dimensional Copula density distribution
         """
         # Following Copula definitions from
         # https://pydoc.net/copulalib/1.1.0/copulalib.copulalib/
@@ -153,21 +153,21 @@ class Copula_Distr:
         # clayton copula
         if self.copula == 'clayton':
             assert hasattr(self, 'theta'), 'Please specify theta for %r copula' % self.copula
-            uu, vv = sample_clayton(obs_, self.theta)
+            uu, vv = sample_clayton(num_samples, self.theta)
 
         # frank copula
         elif self.copula == 'frank':
             assert hasattr(self, 'theta'), 'Please specify theta for %r copula' % self.copula
-            uu, vv = sample_frank(obs_, self.theta)
+            uu, vv = sample_frank(num_samples, self.theta)
 
         # gumbel copula
         elif self.copula == 'gumbel':
             assert hasattr(self, 'theta'), 'Please specify theta for %r copula' % self.copula
-            uu, vv = sample_gumbel(obs_, self.theta)
+            uu, vv = sample_gumbel(num_samples, self.theta)
 
         # gumbel copula
         elif self.copula == 'independent':
-            xx = scipy.stats.uniform.rvs(size=(obs_, 2))
+            xx = scipy.stats.uniform.rvs(size=(num_samples, 2))
 
         else:
             raise ValueError('Unknown copula')
@@ -190,10 +190,10 @@ class Copula_Distr:
         return copula_pdf(self.copula, self.theta, uu, vv)
 
 
-def save_dataset_2D(copula, marginal_1, marginal_2, theta, obs_, mu, var, alpha):
+def save_dataset_2D(copula, marginal_1, marginal_2, theta, num_samples, mu, var, alpha):
     dataset = Joint_Distr(copula, marginal_1, marginal_2, theta,
                           mu=mu, var=var, alpha=alpha)
-    samples = dataset.sample(obs_)
+    samples = dataset.sample(num_samples)
 
     data_train, data_val = train_test_split(samples, test_size=0.2)
     data_val, data_test = train_test_split(samples, test_size=0.5)
@@ -203,7 +203,7 @@ def save_dataset_2D(copula, marginal_1, marginal_2, theta, obs_, mu, var, alpha)
     np.save(os.path.join(os.path.join('datasets', 'joint_data'), '2D_{}_{}_{}_tst'.format(copula, marginal_1, marginal_2)), data_test)
 
 
-def save_dataset_4D(mix, copula='clayton', marginal='gamma', obs_=10000):
+def save_dataset_4D(mix, copula='clayton', marginal='gamma', num_samples=10000):
     samples = mutivariate_copula(mix, marginal=marginal, disable_marginal=False)
     np.save(os.path.join(os.path.join('datasets', 'joint_data'), '4D_{}_{}_mix{}'.format(copula, marginal, mix)), samples)
 
@@ -301,7 +301,7 @@ def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers, ret
     return loader_train, loader_val, loader_test
 
 
-def mutivariate_copula(mix, copula='clayton', marginal='gamma', obs_=10000, disable_marginal=False):
+def mutivariate_copula(mix, copula='clayton', marginal='gamma', num_samples=10000, disable_marginal=False):
     if mix is False:
         if copula == 'clayton':
             pair_copula = pv.BicopFamily.clayton
@@ -329,13 +329,13 @@ def mutivariate_copula(mix, copula='clayton', marginal='gamma', obs_=10000, disa
 
     # Set-up a vine copula
     copula = pv.Vinecop(matrix=mat, pair_copulas=pcs)
-    copulasamples = copula.simulate(n=obs_)
+    copula_samples = copula.simulate(n=num_samples)
     if not disable_marginal:
-        for dim in range(copulasamples.shape[1]):
-            copulasamples[:, dim] = marginal_transform(copulasamples[:, dim], marginal=marginal,
+        for dim in range(copula_samples.shape[1]):
+            copula_samples[:, dim] = marginal_transform(copula_samples[:, dim], marginal=marginal,
                                                                   mu=mu, var=var, alpha=alpha)
-    assert not np.isnan(np.sum(copulasamples)), '{}'.format(copulasamples[np.isnan(copulasamples)])
-    return torch.from_numpy(copulasamples)
+    assert not np.isnan(np.sum(copula_samples)), '{}'.format(copula_samples[np.isnan(copula_samples)])
+    return torch.from_numpy(copula_samples)
 
 
 if __name__ == '__main__':
@@ -366,11 +366,11 @@ if __name__ == '__main__':
             else:
                 theta = 5
             print('Creating 2D dataset for {} copula with {} marginal..'.format(copula, marginal_1))
-            save_dataset_2D(copula, marginal_1, marginal_1, theta, obs_=obs, mu=mu, var=var, alpha=alpha)
+            save_dataset_2D(copula, marginal_1, marginal_1, theta, num_samples=obs, mu=mu, var=var, alpha=alpha)
             if copula != 'independent':
                 print('Creating 4D dataset for {} copula with {} marginal..'.format(copula, marginal_1))
                 save_dataset_4D(False, copula, marginal_1, obs)
 
     for marginal_1 in marginal_1_list:
         print('Creating 4D dataset for {} copula with mixed marginals..'.format(marginal_1))
-        save_dataset_4D(True, marginal=marginal_1, obs_=obs)
+        save_dataset_4D(True, marginal=marginal_1, num_samples=obs)
