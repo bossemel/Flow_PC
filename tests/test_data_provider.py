@@ -28,13 +28,13 @@ def test_marginal_distribution():
     marg_distr = Marginal_Distr('gaussian', mu=0, var=1)
     get_samples_pdf(marg_distr, num_samples=num_samples)
 
-    marg_distr = Marginal_Distr('uniform', low_=0, high_=1)
+    marg_distr = Marginal_Distr('uniform', low=0, high=1)
     get_samples_pdf(marg_distr, num_samples=num_samples, mean_gates=(0.45, 0.55))
 
     marg_distr = Marginal_Distr('lognormal', mu=0, var=1)
     get_samples_pdf(marg_distr, num_samples=num_samples, check_mean=False)
 
-    marg_distr = Marginal_Distr('gamma', alpha_=5)
+    marg_distr = Marginal_Distr('gamma', alpha=5)
     get_samples_pdf(marg_distr, num_samples=num_samples, check_mean=False)
 
     num_samples_ = 1000

@@ -6,7 +6,7 @@ from utils import create_folders
 import os 
 import json 
 import random 
-
+from data_provider import split_data_copula
 
 # @Todo: write test that trains cond indep test for different inputs and evalute the results 
 # @Todo: write test that evaluted the conditional mutual information function for different given copula functions 
@@ -31,9 +31,28 @@ def test_copula_estimator():
     kwargs = {'n_layers': args.n_layers_c,
               'lr': args.lr_c,
               'weight_decay': args.weight_decay_c,
-              'amsgrad': args.amsgrad_c}
+              'amsgrad': args.amsgrad_c,
+              'hidden_units': args.hidden_units_c,
+              'tail_bound': args.tail_bound_c} # @Todo: recheck that these get used!
 
-    cop_flow = copula_estimator(x_uni, y_uni, cond_uni, epochs=1, exp_name='testing', device=device, **kwargs)
+    # Transform into data object
+    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(x_uni, 
+                                                                                               y_uni, 
+                                                                                               cond_uni, 
+                                                                                               batch_size=128, 
+                                                                                               num_workers=0, 
+                                                                                               return_datasets=True)
+    for batch in loader_train:
+        print(batch[0].shape, batch[1].shape)
+        
+    cop_flow = copula_estimator(loader_train, 
+                                loader_val, 
+                                loader_test, 
+                                cond_set_dim=cond_uni.shape[-1], 
+                                epochs=1, 
+                                exp_name='testing', 
+                                device=device, 
+                                **kwargs)
 
 # # @Todo: write test for marginal estimator
 # # @Todo: write test with uniform distr for copula estimator
@@ -115,11 +134,4 @@ def test_hypothesis_test_5():
 #     raise NotImplementedError
 
 if __name__ == '__main__':
-
-    # Set Seed
-    random_seed = 432
-    np.random.seed(random_seed)
-    torch.manual_seed(random_seed)
-    random.seed(random_seed)
-    torch.cuda.manual_seed(random_seed)
-
+    test_copula_estimator()

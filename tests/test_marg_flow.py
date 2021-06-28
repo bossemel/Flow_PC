@@ -1,6 +1,6 @@
 from cond_indep_test import marginal_transform_1d
 from options import TrainOptions
-from utils import create_folders
+from utils import create_folders, set_seeds
 import torch
 import numpy as np
 import json
@@ -24,11 +24,7 @@ def test_marginal_estimator():
     args.device = torch.cuda.current_device()
 
     # Set Seed
-    np.random.seed(args.random_seed)
-    torch.manual_seed(args.random_seed)
-    random.seed(args.random_seed)
-    if use_cuda:
-        torch.cuda.manual_seed(args.random_seed)
+    set_seeds(args.seed)
 
     # Get inputs
     obs = 50
@@ -38,7 +34,12 @@ def test_marginal_estimator():
     kwargs = {'n_layers': args.n_layers_m,
               'lr': args.lr_m,
               'weight_decay': args.weight_decay_m,
-              'amsgrad': args.amsgrad_m}
+              'amsgrad': args.amsgrad_m,
+              'n_bins': args.n_bins_m,
+              'tail_bound': args.tail_bound_m,
+              'identity_init': args.identity_init_m,
+              'hidden_units': args.hidden_units_m,
+              'tails': args.tails_m}
 
     outputs = marginal_transform_1d(xx, 'test_marg_flow', args.device, **kwargs)
 

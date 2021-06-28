@@ -192,7 +192,7 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
         ff.write('Best hyperparams: {} Lowest Val Loss: {} Best Epoch: {}'.format(best_hyperparams, best_loss, best_epoch))
 
 
-def set_seeds(seed, use_cuda):
+def set_seeds(seed, use_cuda=True):
     np.random.seed(seed)
     torch.manual_seed(seed)
     random.seed(seed)

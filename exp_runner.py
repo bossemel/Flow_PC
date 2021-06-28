@@ -175,6 +175,7 @@ class ExperimentBuilder(nn.Module):
                         inputs_batch, cond_inputs_batch = inputs_batch
                     else:
                         cond_inputs_batch = None
+
                     loss = self.run_train_iter(inputs_batch=inputs_batch, cond_inputs_batch=cond_inputs_batch)  # take a training iter step
                     current_epoch_losses["train_loss"].append(loss)  # add current iter loss to the train loss list
                     pbar_train.update(1)

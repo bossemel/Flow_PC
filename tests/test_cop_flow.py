@@ -1,12 +1,13 @@
 # @Todo: write test function that trains and evaluates conditional copula flow for conditional copula inputs
 from cond_indep_test import copula_estimator
 from options import TrainOptions
-from utils import create_folders
+from utils import create_folders, set_seeds
 import torch
 import numpy as np
 import json
 import random
 import os 
+from data_provider import split_data_copula
 
 def test_copula_estimator():
 
@@ -23,11 +24,7 @@ def test_copula_estimator():
     args.device = torch.cuda.current_device()
 
     # Set Seed
-    np.random.seed(args.random_seed)
-    torch.manual_seed(args.random_seed)
-    random.seed(args.random_seed)
-    if use_cuda:
-        torch.cuda.manual_seed(args.random_seed)
+    set_seeds(args.seed)
 
     # Get inputs
     obs = 50
@@ -39,9 +36,27 @@ def test_copula_estimator():
     kwargs = {'n_layers': args.n_layers_c,
               'lr': args.lr_c,
               'weight_decay': args.weight_decay_c,
-              'amsgrad': args.amsgrad_c}
+              'amsgrad': args.amsgrad_c,
+              'hidden_units': args.hidden_units_c,
+              'tail_bound': args.tail_bound_c}
 
-    copula_estimator(xx, yy, zz, 'test_cop_flow', args.device, **kwargs)
+    # Transform into data object
+    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(xx, 
+                                                                                               yy, 
+                                                                                               zz, 
+                                                                                               batch_size=128, 
+                                                                                               num_workers=0, 
+                                                                                               return_datasets=True)
+
+    cop_flow = copula_estimator(loader_train, 
+                                loader_val, 
+                                loader_test, 
+                                cond_set_dim=zz.shape[-1], 
+                                epochs=1, 
+                                exp_name='test_cop_flow', 
+                                device=args.device, 
+                                **kwargs)
+    #copula_estimator(xx, yy, zz, 'test_cop_flow', device=args.device, **kwargs)
 
 if __name__ == '__main__':
     test_copula_estimator()
