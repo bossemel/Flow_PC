@@ -63,10 +63,6 @@ class TrainOptions:
         self.parser.add_argument(
             '--clip_grad_norm_c', type=int, default=50, help='number of epochs to train (default: 100)')
 
-    def cop_flow(self):
-        self.parser.add_argument(
-            '--n_layers_c', type=int, default=5, help='adam optimizer weight decay')
-
     def marg_flow(self):
         self.parser.add_argument(
             '--n_layers_m', type=int, default=8, help='Number of spline layers in flow')
@@ -82,6 +78,22 @@ class TrainOptions:
             '--identity_init_m', action='store_false', default=True, help='adam optimizer weight decay')
         self.parser.add_argument(
             '--tails_m', type=str, default=None, help='Function type outside spline region')
+
+    def cop_flow(self):
+        self.parser.add_argument(
+            '--n_layers_c', type=int, default=8, help='Number of spline layers in flow')
+        self.parser.add_argument(
+            '--hidden_units_c', type=int, default=8, help='Number of hidden units in spline layer')
+        self.parser.add_argument(
+            '--n_blocks_c', type=int, default=9, help='Number of residual blocks in each spline layer')
+        self.parser.add_argument(
+            '--n_bins_c', type=int, default=45, help='Number of bins in piecewise spline transform')
+        self.parser.add_argument(
+            '--tail_bound_c', type=int, default=32, help='Bounds of spline region')
+        self.parser.add_argument(
+            '--identity_init_c', action='store_false', default=True, help='adam optimizer weight decay')
+        self.parser.add_argument(
+            '--tails_c', type=str, default=None, help='Function type outside spline region')
 
     def initialize(self):
         # Training settings

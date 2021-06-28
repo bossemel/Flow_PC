@@ -90,6 +90,7 @@ if __name__ == '__main__':
     # Training settings
     args = TrainOptions().parse()   # get training options
     args.exp_name = 'exp_marg_flow'
+    args.xperiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
 
     # Create Folders
     create_folders(args)
@@ -110,7 +111,6 @@ if __name__ == '__main__':
     # exp_marg_transform(inputs)
     # exit()
     
-    experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
 
     # Transform into data object
     data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
@@ -124,6 +124,6 @@ if __name__ == '__main__':
                   loader_val, 
                   loader_test, 
                   args.device, 
-                  experiment_logs, 
+                  args.experiment_logs, 
                   iterations=200, 
                   epochs=args.epochs_m)

@@ -268,7 +268,11 @@ class TorchStandardScaler:
 
 
 def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers, return_datasets=False):
-    inputs_cond = torch.cat([x_inputs, y_inputs, cond_set], axis=1)
+    if cond_set is not None: 
+        inputs_cond = torch.cat([x_inputs, y_inputs, cond_set], axis=1)
+    else:
+        inputs_cond = torch.cat([x_inputs, y_inputs], axis=1)
+
 
     data_train, data_val = train_test_split(inputs_cond, test_size=0.20)
     data_val, data_test = train_test_split(data_val, test_size=0.50)
@@ -279,16 +283,16 @@ def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers, ret
     data_train = scaler.transform(data_train)
     data_val = scaler.transform(data_val)
     data_test = scaler.transform(data_test)
-    
-    data_train = DataProvider(inputs=data_train[:, :2], cond_inputs=data_train[:, 2:])
+
+    data_train = DataProvider(inputs=data_train[:, :2], cond_inputs=data_train[:, 2:] if cond_set is not None else None)
     loader_train = torch.utils.data.DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
 
 
-    data_val = DataProvider(inputs=data_val[:, :2], cond_inputs=data_val[:, 2:])
+    data_val = DataProvider(inputs=data_val[:, :2], cond_inputs=data_val[:, 2:] if cond_set is not None else None)
     loader_val = torch.utils.data.DataLoader(data_val, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
 
 
-    data_test = DataProvider(inputs=data_test[:, :2], cond_inputs=data_test[:, 2:])
+    data_test = DataProvider(inputs=data_test[:, :2], cond_inputs=data_test[:, 2:] if cond_set is not None else None)
     loader_test = torch.utils.data.DataLoader(data_test, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
     
     if return_datasets:

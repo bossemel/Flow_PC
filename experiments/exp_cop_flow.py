@@ -13,14 +13,14 @@ from statsmodels.distributions.empirical_distribution import ECDF
 from utils import create_folders, random_search, set_seeds
 from data_provider import split_data_copula, Copula_Distr
 from options import TrainOptions
-from eval.plots import visualize1d
+from eval.plots import visualize_joint
 eps = 1e-10
 
 
 # @Todo: implement comparison (copula? kde?)
 # @Todo: implement visualizer
 
-def exp_cop_transform(inputs):
+def exp_cop_transform(inputs: torch.Tensor):
 
     # Training settings
     args = TrainOptions().parse()   # get training options
@@ -36,29 +36,56 @@ def exp_cop_transform(inputs):
     args.device = torch.cuda.current_device()
 
     # Set Seed
-    set_seeds(seed=args.random_seed, use_cuda=use_cuda)
+    set_seeds(seed=args.seed, use_cuda=use_cuda)
 
-    # Transform into data object # @Todo: put in conditional inputs! x_intputs, y_inputs, cond_set! 
-    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(inputs, batch_size=128, num_workers=0, return_datasets=True)
+    # Transform into data object
+    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(inputs[:, 0:1], 
+                                                                                               inputs[:, 1:2], 
+                                                                                               None, 
+                                                                                               batch_size=128, 
+                                                                                               num_workers=0, 
+                                                                                               return_datasets=True)
 
     # Run experiment 
     experiment, experiment_metrics, test_metrics = copula_estimator(loader_train=loader_train, 
                                                                       loader_val=loader_val, 
                                                                       loader_test=loader_test, 
+                                                                      cond_set_dim=None,
                                                                       exp_name=args.exp_name, 
                                                                       device=args.device, 
-                                                                      amsgrad=args.amsgrad_m, 
-                                                                      epochs=args.epochs, 
+                                                                      amsgrad=args.amsgrad_c, 
+                                                                      epochs=args.epochs_c, 
                                                                       num_workers=args.num_workers, 
                                                                       variable_num=0,
-                                                                      n_layers=args.n_layers_m,
-                                                                      lr=args.lr_m,
-                                                                      weight_decay=args.weight_decay_m)
+                                                                      n_layers=args.n_layers_c,
+                                                                      hidden_units=args.hidden_units_c,
+                                                                      tail_bound=args.tail_bound_c,
+                                                                      lr=args.lr_c,
+                                                                      weight_decay=args.weight_decay_c)
 
     # Plot results
-    visualize1d(experiment.model, device=args.device, path=experiment.figures_path, true_samples=data_train, obs=1000, name='cop_flow')
+    vizobs = 10000
+    with torch.no_grad():
+        samples = experiment.model.sample_copula(vizobs).cpu().numpy() # @Todo: bug somewhere in folder creationg: args saved somewhere else from rest
+    visualize_joint(samples, experiment.figures_path, name=args.exp_name)
+    #visualize1d(experiment.model, device=args.device, path=experiment.figures_path, true_samples=data_train, obs=1000, name='cop_flow')
 
-    experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
+    # Calculate JSD
+
+    
+        # # Calculate Jensen-Shannon Divergence of copula
+        # if model_name == 'cop_flow':
+        #     test_dict = jsd_eval_copula(args=args,
+        #                                 epoch=best_dict['best_validation_epoch'],
+        #                                 model=model,
+        #                                 test_dict=test_dict)
+        #     # Evaluate copula margins on test set
+        #     test_dict = margin_uniformity(args=args,
+        #                                   epoch=best_dict['best_validation_epoch'],
+        #                                   model=model,
+        #                                   test_dict=test_dict,
+        #                                   num_samples=args.obs,
+        #                                   cm_flow=args.cop_flow_part_of_CM_Flow)
 
     # # Comparison to empirical CDF Transform:
     # ecdf_nll = ecdf_transform(data_train, data_test)
@@ -72,6 +99,7 @@ if __name__ == '__main__':
     # Training settings
     args = TrainOptions().parse()   # get training options
     args.exp_name = 'exp_cop_flow'
+    args.experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
 
     # Create Folders
     create_folders(args)
@@ -83,11 +111,11 @@ if __name__ == '__main__':
     args.device = torch.cuda.current_device()
 
     # Set Seed
-    set_seeds(seed=args.random_seed, use_cuda=use_cuda)
+    set_seeds(seed=args.seed, use_cuda=use_cuda)
 
     # Get inputs
     copula_data = Copula_Distr(args.copula, theta=args.theta, transform=True)
-    inputs = copula_data.sample(args.obs) # @Todo: create conditional inputs
+    inputs = torch.from_numpy(copula_data.sample(args.obs)) # @Todo: create conditional inputs
     
     exp_cop_transform(inputs)
     exit()

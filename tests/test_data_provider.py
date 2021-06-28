@@ -5,7 +5,7 @@ num_samples = 10000
 
 def test_copula_distribution():
     def get_samples_pdf(cop_type, theta):
-        copula_distr = Copula_Distr(cop_type, theta_=theta)
+        copula_distr = Copula_Distr(cop_type, theta=theta)
         samples = copula_distr.sample(num_samples)
         pdf = copula_distr.pdf(samples)
         assert (np.min(samples) > 0) & (np.max(samples) < 1)
@@ -25,13 +25,13 @@ def test_marginal_distribution():
             pdf = marg_distr.pdf(samples)
             assert (np.min(pdf) > 0)
 
-    marg_distr = Marginal_Distr('gaussian', mu_=0, var_=1)
+    marg_distr = Marginal_Distr('gaussian', mu=0, var=1)
     get_samples_pdf(marg_distr, num_samples=num_samples)
 
     marg_distr = Marginal_Distr('uniform', low_=0, high_=1)
     get_samples_pdf(marg_distr, num_samples=num_samples, mean_gates=(0.45, 0.55))
 
-    marg_distr = Marginal_Distr('lognormal', mu_=0, var_=1)
+    marg_distr = Marginal_Distr('lognormal', mu=0, var=1)
     get_samples_pdf(marg_distr, num_samples=num_samples, check_mean=False)
 
     marg_distr = Marginal_Distr('gamma', alpha_=5)
@@ -39,17 +39,17 @@ def test_marginal_distribution():
 
     num_samples_ = 1000
 
-    marg_distr = Marginal_Distr('mix_gamma', mu_=0, var_=1)
+    marg_distr = Marginal_Distr('mix_gamma', mu=0, var=1)
     get_samples_pdf(marg_distr, num_samples=num_samples_, check_mean=False, get_pdf=False)
 
-    marg_distr = Marginal_Distr('mix_lognormal', mu_=0, var_=1)
+    marg_distr = Marginal_Distr('mix_lognormal', mu=0, var=1)
     get_samples_pdf(marg_distr, num_samples=num_samples_, check_mean=False, get_pdf=False)
 
-    marg_distr = Marginal_Distr('mix_gaussgamma', mu_=0, var_=1)
+    marg_distr = Marginal_Distr('mix_gaussgamma', mu=0, var=1)
     get_samples_pdf(marg_distr, num_samples=num_samples_, check_mean=False, get_pdf=False)
 
 def test_joint_distribution():
-    joint_distr = Joint_Distr('clayton', 'gaussian', 'gaussian', theta_=2, mu_=0, var_=1)
+    joint_distr = Joint_Distr('clayton', 'gaussian', 'gaussian', theta=2, mu=0, var=1)
     samples = joint_distr.sample(num_samples)
     assert (np.mean(samples) > -0.05) & (np.mean(samples) < 0.05)
 

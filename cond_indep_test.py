@@ -14,7 +14,7 @@ eps = 1e-10
 
 
 def marginal_estimator(loader_train, loader_val, loader_test, exp_name, device,
-                          epochs=100, variable_num=0, disable_tqdm=False, **kwargs):
+                          epochs=50, variable_num=0, disable_tqdm=False, **kwargs):
     # Initialize marginal transform
     marg_flow = marg_flow_constructor(**kwargs) 
 
@@ -85,13 +85,10 @@ def marginal_transform(inputs: np.ndarray, exp_name, device, epochs=100, batch_s
     return outputs
 
 
-def copula_estimator(x_inputs: torch.Tensor, y_inputs: torch.Tensor,
-                     cond_set: torch.Tensor, exp_name, device, epochs=100, batch_size=128, num_workers=0, disable_tqdm=False, **kwargs):
-    # Transform into data object
-    loader_train, loader_val, loader_test = split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers)
+def copula_estimator(loader_train, loader_val, loader_test, cond_set_dim, exp_name, device, epochs=100, batch_size=128, num_workers=0, disable_tqdm=False, **kwargs):
 
     # Initialize Copula Transform
-    cop_flow = cop_flow_constructor(context_dim=cond_set.shape[-1], **kwargs)
+    cop_flow = cop_flow_constructor(context_dim=cond_set_dim, **kwargs)
     optimizer, scheduler = set_optimizer_scheduler(cop_flow,
                                                    kwargs['lr'],
                                                    kwargs['weight_decay'],
@@ -186,6 +183,7 @@ if __name__ == '__main__':
 
     # Training settings
     args = TrainOptions().parse()   # get training options
+    # args.experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
 
     # Create Folders
     create_folders(args)
@@ -197,7 +195,7 @@ if __name__ == '__main__':
     args.device = torch.cuda.current_device()
 
     # Set Seed
-    set_seeds(seed=args.random_seed, use_cuda=use_cuda)
+    set_seeds(seed=args.seed, use_cuda=use_cuda)
 
     # Get inputs
     obs = 50
