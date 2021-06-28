@@ -28,7 +28,7 @@ def test_marginal_estimator():
 
     # Get inputs
     obs = 50
-    args.epochs = 1
+    args.epochs_m = 1
     xx = np.random.uniform(size=(obs, 1))
 
     kwargs = {'n_layers': args.n_layers_m,

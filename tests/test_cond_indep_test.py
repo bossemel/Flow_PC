@@ -119,24 +119,23 @@ class Distr_Wrapper():
     def __init__(self, distribution):
         self.distribution = distribution 
     
-    def sample_copula(self, num_samples, context):
+    def sample_copula(self, num_samples, context=None):
         return torch.from_numpy(self.distribution.sample(num_samples))
 
-    def log_pdf_uniform(self, inputs, context):
+    def log_pdf_uniform(self, inputs, context=None):
         return torch.log(torch.from_numpy(self.distribution.pdf(inputs)))
 
 
 def test_mi_estimator_dependent_clayton():
    # Get inputs
-    copula_distr = Copula_Distr('clayton', theta=-1+eps, transform=False)
+    copula_distr = Copula_Distr('clayton', theta=0+eps, transform=False)
     visualize_joint(copula_distr.sample(1000000), os.path.join('results', 'testing'), name='copula_clayton_indep')
     copula_distr = Distr_Wrapper(copula_distr)
-    
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device)
+    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
     print(mi)
-    assert np.isclose(mi, 0)
+    assert np.isclose(mi, 0, atol=1e-02)
 
    # Get inputs
     copula_distr = Copula_Distr('clayton', theta=2+eps, transform=False)
@@ -145,58 +144,58 @@ def test_mi_estimator_dependent_clayton():
     
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device)
+    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
     print(mi)
-    assert not np.isclose(mi, 0)
+    assert not np.isclose(mi, 0, atol=1e-02)
 
 
 
 def test_mi_estimator_dependent_frank():
    # Get inputs
     copula_distr = Copula_Distr('frank', theta=eps, transform=False)
-    visualize_joint(copula_distr.sample(100000), os.path.join('results', 'testing'), name='copula_frank_indep')
+    visualize_joint(copula_distr.sample(1000000), os.path.join('results', 'testing'), name='copula_frank_indep')
     copula_distr = Distr_Wrapper(copula_distr)
-    
+
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device)
+    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
     print(mi)
-    assert np.isclose(mi, 0)
+    assert np.isclose(mi, 0, atol=1e-02)
 
    # Get inputs
     copula_distr = Copula_Distr('frank', theta=20, transform=False)
-    visualize_joint(copula_distr.sample(100000), os.path.join('results', 'testing'), name='copula_frank_dep')
+    visualize_joint(copula_distr.sample(1000000), os.path.join('results', 'testing'), name='copula_frank_dep')
     copula_distr = Distr_Wrapper(copula_distr)
-    
+
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device)
+    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
     print(mi)
-    assert not np.isclose(mi, 0)
+    assert not np.isclose(mi, 0, atol=1e-02)
 
 
 def test_mi_estimator_dependent_gumbel():
    # Get inputs
     copula_distr = Copula_Distr('gumbel', theta=1+eps, transform=False)
-    visualize_joint(copula_distr.sample(100000), os.path.join('results', 'testing'), name='copula_gumbel_indep')
+    visualize_joint(copula_distr.sample(1000000), os.path.join('results', 'testing'), name='copula_gumbel_indep')
     copula_distr = Distr_Wrapper(copula_distr)
-    
+
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device)
+    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
     print(mi)
-    assert np.isclose(mi, 0)
+    assert np.isclose(mi, 0, atol=1e-02)
 
    # Get inputs
     copula_distr = Copula_Distr('gumbel', theta=5+eps, transform=False)
-    visualize_joint(copula_distr.sample(100000), os.path.join('results', 'testing'), name='copula_gumbel_dep')
+    visualize_joint(copula_distr.sample(1000000), os.path.join('results', 'testing'), name='copula_gumbel_dep')
     copula_distr = Distr_Wrapper(copula_distr)
-    
+
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device)
+    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
     print(mi)
-    assert not np.isclose(mi, 0)
+    assert not np.isclose(mi, 0, atol=1e-02)
 
 # def test_marginal_transform_1d():
 #     raise NotImplementedError

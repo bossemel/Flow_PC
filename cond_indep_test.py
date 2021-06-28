@@ -123,17 +123,14 @@ def copula_estimator(loader_train, loader_val, loader_test, cond_set_dim, exp_na
     return experiment, experiment_metrics, test_metrics
 
 
-def mi_estimator(cop_flow, device, obs_n=20, obs_m=10) -> float:
+def mi_estimator(cop_flow, device, obs_n=10000, obs_m=10000) -> float:
     ww = torch.FloatTensor(obs_m, 5).normal_(0, 1)
 
     log_density = torch.empty((ww.shape[0], obs_m))
     for mm in range(obs_m):
-        # noise = cop_flow._distribution.sample(ww.shape[0])
-        # cop_samples, _ = cop_flow._transform.inverse(noise, context=ww.to(device))
         cop_samples = cop_flow.sample_copula(num_samples=ww.shape[0], context=ww.to(device))
         norm_distr = torch.distributions.normal.Normal(0, 1)
         log_density[:, mm] = cop_flow.log_pdf_uniform(norm_distr.cdf(cop_samples), norm_distr.cdf(ww).to(device)) # @Todo: triple check if this is correct
-    
     
     mi = torch.mean(log_density)
 

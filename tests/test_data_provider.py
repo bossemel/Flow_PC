@@ -1,13 +1,14 @@
 from data_provider import Copula_Distr, Distribution, Joint_Distr, Marginal_Distr
 import scipy.stats
 import numpy as np
+import torch
 num_samples = 10000
 
 def test_copula_distribution():
     def get_samples_pdf(cop_type, theta):
         copula_distr = Copula_Distr(cop_type, theta=theta)
         samples = copula_distr.sample(num_samples)
-        pdf = copula_distr.pdf(samples)
+        pdf = copula_distr.pdf(torch.from_numpy(samples))
         assert (np.min(samples) > 0) & (np.max(samples) < 1)
         assert (np.min(pdf) > 0)
 
@@ -22,7 +23,7 @@ def test_marginal_distribution():
         if check_mean:
             assert (np.mean(samples) > mean_gates[0]) & (np.mean(samples) < mean_gates[0])
         if get_pdf:
-            pdf = marg_distr.pdf(samples)
+            pdf = marg_distr.pdf(torch.from_numpy(samples))
             assert (np.min(pdf) > 0)
 
     marg_distr = Marginal_Distr('gaussian', mu=0, var=1)
