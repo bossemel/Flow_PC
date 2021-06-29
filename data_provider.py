@@ -144,7 +144,7 @@ class Copula_Distr:
         self.theta = theta
         self.transform = transform
 
-    def sample(self, num_samples=None, transform=None):
+    def sample(self, num_samples=None, transform=None, **kwargs):
         """Produce num_samples samples of 2-dimensional Copula density distribution
         """
         # Following Copula definitions from
@@ -215,21 +215,21 @@ class Distribution():
 
 
 class DataProvider(Dataset):
-    def __init__(self, inputs: np.ndarray, cond_inputs: np.ndarray = None):
+    def __init__(self, inputs: np.ndarray, context: np.ndarray = None):
         self.inputs = inputs
-        if cond_inputs is not None:
-            self.cond_inputs = cond_inputs
+        if context is not None:
+            self.context = context
         else:
-            self.cond_inputs = None
+            self.context = None
 
     def __len__(self):
         return len(self.inputs)
 
     def __getitem__(self, idx: int):
-        if self.cond_inputs is None:
+        if self.context is None:
             return self.inputs[idx, :]
         else:
-            return [self.inputs[idx, :], self.cond_inputs[idx, :]]
+            return [self.inputs[idx, :], self.context[idx, :]]
 
 
 def split_data_marginal(inputs, batch_size, num_workers=12, return_datasets=False):
@@ -284,15 +284,15 @@ def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers, ret
     data_val = scaler.transform(data_val)
     data_test = scaler.transform(data_test)
 
-    data_train = DataProvider(inputs=data_train[:, :2], cond_inputs=data_train[:, 2:] if cond_set is not None else None)
+    data_train = DataProvider(inputs=data_train[:, :2], context=data_train[:, 2:] if cond_set is not None else None)
     loader_train = torch.utils.data.DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
 
 
-    data_val = DataProvider(inputs=data_val[:, :2], cond_inputs=data_val[:, 2:] if cond_set is not None else None)
+    data_val = DataProvider(inputs=data_val[:, :2], context=data_val[:, 2:] if cond_set is not None else None)
     loader_val = torch.utils.data.DataLoader(data_val, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
 
 
-    data_test = DataProvider(inputs=data_test[:, :2], cond_inputs=data_test[:, 2:] if cond_set is not None else None)
+    data_test = DataProvider(inputs=data_test[:, :2], context=data_test[:, 2:] if cond_set is not None else None)
     loader_test = torch.utils.data.DataLoader(data_test, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
     
     if return_datasets:

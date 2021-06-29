@@ -3,20 +3,20 @@ import warnings
 eps = 1e-10
 
 
-def jsd_copula(self, true_distribution, context=None, num_samples=100000):
+def jsd_copula(pred_dist, true_dist, device, context=None, num_samples=100000):
     """Returns JS-Divergence of the predicted distribution and the true distribution
     """
     # Get ground truth
-    samples_target = true_distribution.sample(num_samples=num_samples, context=context) # @Todo: write distribution function for copulas that can 'sample'
-    samples_pred = self.sample_copula(num_samples=num_samples, context=context)
+    samples_target = torch.from_numpy(true_dist.sample(num_samples=num_samples, context=context))
+    samples_pred = pred_dist.sample_copula(num_samples=num_samples, context=context)
 
     # Prob X in both distributions
-    prob_x_in_p = self.pdf_uniform(inputs=samples_pred, context=context)
-    prob_x_in_q = true_distribution.pdf(samples_pred, context=context)
+    prob_x_in_p = torch.exp(pred_dist.log_pdf_uniform(inputs=samples_pred, context=context))
+    prob_x_in_q = torch.from_numpy(true_dist.pdf(samples_pred.cpu())).to(device) # @Todo: think about how to include contexts and where..
 
     # Prob Y in both distributions
-    prob_y_in_p = self.pdf_uniform(inputs=samples_target, context=context)
-    prob_y_in_q = true_distribution.pdf(samples_target, context=context)
+    prob_y_in_p = torch.exp(pred_dist.log_pdf_uniform(inputs=samples_target.to(device), context=context))
+    prob_y_in_q = torch.from_numpy(true_dist.pdf(samples_target)).to(device)
 
     assert torch.min(prob_x_in_p) >= 0
     assert torch.min(prob_x_in_q) >= 0

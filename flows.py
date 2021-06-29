@@ -41,7 +41,7 @@ def cop_flow_constructor(n_layers, context_dim, hidden_units, tail_bound , **kwa
 
 
 def marg_flow_constructor(n_layers, n_bins, tail_bound, identity_init, hidden_units, tails,
-                          dropout=0.01, use_batch_norm=True, **kwargs): # @Todo: pass these arguments
+                          dropout=0.01, use_batch_norm=True, **kwargs):
     def create_transform():
         # return transforms.CompositeTransform([
         #     transforms.MaskedAffineAutoregressiveTransform(features=1, hidden_features=0),
@@ -67,16 +67,6 @@ def marg_flow_constructor(n_layers, n_bins, tail_bound, identity_init, hidden_un
             tails='linear',
             tail_bound=tail_bound,
             identity_init=identity_init)
-
-    # @Todo: find a way to include Resnet? 
-    # resnet = ResidualNet(
-    #             in_features=1,
-    #             out_features=1,
-    #             hidden_features=hidden_units,
-    #             num_blocks=n_blocks,
-    #             dropout_probability=dropout,
-    #             use_batch_norm=use_batch_norm
-    #         )
 
     transform = transforms.CompositeTransform([create_transform() for ii in range(n_layers)])
 
