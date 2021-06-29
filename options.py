@@ -37,9 +37,9 @@ class TrainOptions:
 
     def optimizer_marg(self):
         self.parser.add_argument(
-            '--weight_decay_m', type=float, default=1e-12, help='adam optimizer weight decay')
+            '--weight_decay_m', type=float, default=1e-10, help='adam optimizer weight decay')
         self.parser.add_argument(
-            '--lr_m', type=float, default=0.001, help='learning rate (default: 0.0001)')
+            '--lr_m', type=float, default=0.01, help='learning rate (default: 0.0001)')
         self.parser.add_argument(
             '--amsgrad_m', action='store_true', default=False)
         self.parser.add_argument(
@@ -47,7 +47,7 @@ class TrainOptions:
         self.parser.add_argument(
             '--epochs_m', type=int, default=50, help='number of epochs to train (default: 100)')
         self.parser.add_argument(
-            '--clip_grad_norm_m', action='store_false', default=True, help='number of epochs to train (default: 100)')
+            '--clip_grad_norm_m', action='store_true', default=False, help='number of epochs to train (default: 100)')
 
     def optimizer_cop(self):
         self.parser.add_argument(
@@ -65,9 +65,9 @@ class TrainOptions:
 
     def marg_flow(self):
         self.parser.add_argument(
-            '--n_layers_m', type=int, default=8, help='Number of spline layers in flow')
+            '--n_layers_m', type=int, default=5, help='Number of spline layers in flow')
         self.parser.add_argument(
-            '--hidden_units_m', type=int, default=8, help='Number of hidden units in spline layer')
+            '--hidden_units_m', type=int, default=4, help='Number of hidden units in spline layer')
         # self.parser.add_argument(
         #     '--n_blocks_m', type=int, default=9, help='Number of residual blocks in each spline layer')
         self.parser.add_argument(
@@ -75,7 +75,7 @@ class TrainOptions:
         self.parser.add_argument(
             '--tail_bound_m', type=int, default=32, help='Bounds of spline region')
         self.parser.add_argument(
-            '--identity_init_m', action='store_false', default=True, help='adam optimizer weight decay')
+            '--identity_init_m', action='store_true', default=False, help='adam optimizer weight decay')
         self.parser.add_argument(
             '--tails_m', type=str, default=None, help='Function type outside spline region')
 

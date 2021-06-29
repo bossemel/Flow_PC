@@ -7,6 +7,9 @@ import json
 import random
 import os 
 from eval.plots import visualize1d
+from experiments.exp_marg_flow import ecdf_transform, ecdf
+import scipy.stats
+eps = 1e-10
 
 
 def test_marginal_estimator():
@@ -45,4 +48,4 @@ def test_marginal_estimator():
 
 
 if __name__ == '__main__':
-    test_marginal_estimator()
+    test_ecdf()

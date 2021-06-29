@@ -9,18 +9,19 @@ import random
 import os 
 from utils.load_and_save import save_statistics
 import scipy.stats
-from statsmodels.distributions.empirical_distribution import ECDF
 from utils import create_folders, random_search, set_seeds
 from data_provider import split_data_marginal, Marginal_Distr
 from options import TrainOptions
 from eval.plots import visualize1d
+import matplotlib.pyplot as plt
 eps = 1e-10
 
 
-def ecdf_transform(data_train, data_test):
+def kde_nll(data_train, data_test):
     norm_distr = scipy.stats.norm()
-    ecdf = ECDF(data_train.reshape(-1,))
-    uniform_samples = ecdf(data_test.reshape(-1,))
+    kde = scipy.stats.gaussian_kde(data_train.reshape(-1,))
+    cdf = np.vectorize(lambda x: kde.integrate_box_1d(-np.inf, x))
+    uniform_samples = cdf(data_test.reshape(-1,))
     uniform_samples[uniform_samples == 0] = eps
     uniform_samples[uniform_samples == 1] = 1 - eps
     gaussian_samples = norm_distr.ppf(uniform_samples)
@@ -30,7 +31,8 @@ def exp_marg_transform(inputs):
 
     # Training settings
     args = TrainOptions().parse()   # get training options
-    args.exp_name = 'exp_marg_flow'
+    if args.exp_name == 'default_name':
+        args.exp_name = 'exp_marg_flow'
 
     # Create Folders
     create_folders(args)
@@ -42,11 +44,7 @@ def exp_marg_transform(inputs):
     args.device = torch.cuda.current_device()
 
     # Set Seed
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    random.seed(args.seed)
-    if use_cuda:
-        torch.cuda.manual_seed(args.seed)
+    set_seeds(args.seed)
 
     # Transform into data object
     data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
@@ -79,7 +77,7 @@ def exp_marg_transform(inputs):
     experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
 
     # Comparison to empirical CDF Transform:
-    ecdf_nll = ecdf_transform(data_train, data_test)
+    ecdf_nll = kde_nll(data_train, data_test)
     test_metrics['ecdf_nll'] = [ecdf_nll]
 
     print('Flow NLL: {}, ECDF NLL: {}'.format(test_metrics['test_loss'][0], ecdf_nll))
@@ -108,8 +106,8 @@ if __name__ == '__main__':
     marginal_data = Marginal_Distr(args.marginal, mu=args.mu, var=args.var, alpha=args.alpha, low=args.low, high=args.high)
     inputs = marginal_data.sample(args.obs)
     
-    # exp_marg_transform(inputs)
-    # exit()
+    exp_marg_transform(inputs)
+    exit()
     
 
     # Transform into data object
