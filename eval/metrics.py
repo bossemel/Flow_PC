@@ -73,3 +73,4 @@ def js_divergence(prob_x_in_p, prob_x_in_q,
         warnings.warn("JSD estimate below zero. JSD: {}".format(divergence))
 
     return divergence
+

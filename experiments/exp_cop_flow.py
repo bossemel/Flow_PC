@@ -70,33 +70,21 @@ def exp_cop_transform(inputs: torch.Tensor, copula_distr, cond_set_dim=None):
     visualize_joint(samples, experiment.figures_path, name=args.exp_name)
     #visualize1d(experiment.model, device=args.device, path=experiment.figures_path, true_samples=data_train, obs=1000, name='cop_flow')
 
-    # Calculate JSD
+    # Calculate JSD # @Todo: figure out conditional inputs
     with torch.no_grad():
         jsd = jsd_copula(experiment.model, copula_distr, args.device, context=None, num_samples=100000)
     print(jsd)
-    
-        #     # Evaluate copula margins on test set
-        #     test_dict = margin_uniformity(args=args,
-        #                                   epoch=best_dict['best_validation_epoch'],
-        #                                   model=model,
-        #                                   test_dict=test_dict,
-        #                                   num_samples=args.obs,
-        #                                   cm_flow=args.cop_flow_part_of_CM_Flow)
+
+    test_metrics['cop_flow_jsd'] = [jsd]
+    experiment_logs = os.path.join('results', args.exp_name, 'cf', 'stats')
 
     # # Comparison to empirical CDF Transform:
     # ecdf_nll = ecdf_transform(data_train, data_test)
     # test_metrics['ecdf_nll'] = [ecdf_nll]
 
     # print('Flow NLL: {}, ECDF NLL: {}'.format(test_metrics['test_loss'][0], ecdf_nll))
-    # save_statistics(experiment_logs, 'test_summary.csv', test_metrics, current_epoch=0, continue_from_mode=False)
-
-    # # Transform
-    # inputs = torch.cat([x_inputs, y_inputs], axis=1)
-    # outputs = experiment.model.log_prob(inputs.float().to(device), cond_set.float().to(device))
-
-    # # Transform to uniform
-    # normal_distr = torch.distributions.normal.Normal(0, 1)
-    # #outputs = normal_distr.cdf(outputs)  # @Todo: are these outputs needed?
+    print('Flow JSD: {}'.format(test_metrics['cop_flow_jsd']))
+    save_statistics(experiment_logs, 'test_summary.csv', test_metrics, current_epoch=0, continue_from_mode=False)
 
 
 if __name__ == '__main__':
