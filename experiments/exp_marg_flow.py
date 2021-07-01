@@ -28,24 +28,6 @@ def kde_nll(data_train, data_test):
     return -np.mean(norm_distr.logpdf(gaussian_samples))
 
 def exp_marg_transform(inputs):
-
-    # Training settings
-    args = TrainOptions().parse()   # get training options
-    if args.exp_name == 'default_name':
-        args.exp_name = 'exp_marg_flow'
-
-    # Create Folders
-    create_folders(args)
-    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
-        json.dump(args.__dict__, f, indent=2)
-
-    # Cuda settings
-    use_cuda = torch.cuda.is_available()
-    args.device = torch.cuda.current_device()
-
-    # Set Seed
-    set_seeds(args.seed)
-
     # Transform into data object
     data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
                                                                                                  batch_size=args.batch_size_m, 
@@ -89,11 +71,7 @@ if __name__ == '__main__':
     args = TrainOptions().parse()
     args.exp_name = 'exp_marg_flow'
     # Generate the directory names
-    flow_name = 'mf_0'
-    args.exp_path = os.path.join('results', args.exp_name, flow_name)
-    args.figures_path = os.path.join(args.exp_path, 'figures')
-    args.experiment_logs = os.path.join(args.exp_path, 'stats')
-    args.experiment_saved_models = os.path.join('saved_models', args.exp_name)
+    args.flow_name = 'mf_0'
 
     # Create Folders
     create_folders(args)

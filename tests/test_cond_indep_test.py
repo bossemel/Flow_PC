@@ -16,6 +16,7 @@ def test_copula_estimator():
     # Training settings
     args = TrainOptions().parse()   # get training options
     args.exp_name = 'testing'
+    args.flow_name = 'cf'
     
     # Create Folders
     create_folders(args)

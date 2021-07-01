@@ -13,6 +13,8 @@ def test_copula_estimator():
 
     # Training settings
     args = TrainOptions().parse()   # get training options
+    args.exp_name = 'testing'
+    args.flow_name = 'cf'
 
     # Create Folders
     create_folders(args)
@@ -53,10 +55,10 @@ def test_copula_estimator():
                                 loader_test, 
                                 cond_set_dim=zz.shape[-1], 
                                 epochs=1, 
-                                exp_name='test_cop_flow', 
+                                exp_name=args.exp_name, 
                                 device=args.device, 
                                 **kwargs)
-    #copula_estimator(xx, yy, zz, 'test_cop_flow', device=args.device, **kwargs)
+
 
 if __name__ == '__main__':
     test_copula_estimator()

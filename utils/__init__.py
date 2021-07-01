@@ -17,9 +17,9 @@ def nll_error(log_density):
     return -torch.mean(log_density)
 
 def create_folders(args):
-    args.exp_path = os.path.join('results', args.exp_name)
+    args.exp_path = os.path.join('results', args.exp_name, args.flow_name)
     args.figures_path = os.path.join(args.exp_path, 'figures')
-    args.experiment_logs = os.path.join(args.exp_path, 'result_outputs')
+    args.experiment_logs = os.path.join(args.exp_path, 'stats')
     args.experiment_saved_models = os.path.join('saved_models', args.exp_name)
     Path(args.exp_path).mkdir(parents=True, exist_ok=True)
     Path(args.figures_path).mkdir(parents=True, exist_ok=True)

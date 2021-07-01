@@ -13,6 +13,8 @@ def test_marginal_estimator():
 
     # Training settings
     args = TrainOptions().parse()   # get training options
+    args.exp_name = 'testing'
+    args.flow_name = 'mf_0'
 
     # Create Folders
     create_folders(args)
