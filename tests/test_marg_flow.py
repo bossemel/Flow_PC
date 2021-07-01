@@ -22,7 +22,6 @@ def test_marginal_estimator():
         json.dump(args.__dict__, f, indent=2)
 
     # Cuda settings
-    use_cuda = torch.cuda.is_available()
     args.device = torch.cuda.current_device()
 
     # Set Seed
@@ -43,7 +42,7 @@ def test_marginal_estimator():
               'hidden_units': args.hidden_units_m,
               'tails': args.tails_m}
 
-    outputs = marginal_transform_1d(xx, 'test_marg_flow', args.device, **kwargs)
+    marginal_transform_1d(xx, 'test_marg_flow', args.device, **kwargs)
 
 
 if __name__ == '__main__':

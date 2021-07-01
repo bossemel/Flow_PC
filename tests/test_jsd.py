@@ -51,16 +51,3 @@ class Test_JSD(unittest.TestCase):
         Y_in_q = torch.from_numpy(mv_gaussian_2.pdf(samples_2))
         jsd_X_Y = js_divergence(X_in_p, X_in_q, Y_in_p, Y_in_q)
         self.assertTrue(jsd_X_Y >= 0.5 and jsd_X_Y <= 1)
-
-
-if __name__ == '__main__':
-
-    # Set Seed
-    random_seed = 432
-    np.random.seed(random_seed)
-    random.seed(random_seed)
-
-    for random_seed in range(5):
-        np.random.seed(random_seed)
-        random.seed(random_seed)
-        unittest.main()

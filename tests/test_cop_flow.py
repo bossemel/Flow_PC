@@ -22,7 +22,6 @@ def test_copula_estimator():
         json.dump(args.__dict__, f, indent=2)
 
     # Cuda settings
-    use_cuda = torch.cuda.is_available()
     args.device = torch.cuda.current_device()
 
     # Set Seed
@@ -43,21 +42,21 @@ def test_copula_estimator():
               'tail_bound': args.tail_bound_c}
 
     # Transform into data object
-    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(xx, 
-                                                                                               yy, 
-                                                                                               zz, 
-                                                                                               batch_size=128, 
-                                                                                               num_workers=0, 
-                                                                                               return_datasets=True)
+    __, __, __, loader_train, loader_val, loader_test = split_data_copula(xx, 
+                                                                          yy, 
+                                                                          zz, 
+                                                                          batch_size=128, 
+                                                                          num_workers=0, 
+                                                                          return_datasets=True)
 
-    cop_flow = copula_estimator(loader_train, 
-                                loader_val, 
-                                loader_test, 
-                                cond_set_dim=zz.shape[-1], 
-                                epochs=1, 
-                                exp_name=args.exp_name, 
-                                device=args.device, 
-                                **kwargs)
+    copula_estimator(loader_train, 
+                     loader_val, 
+                     loader_test, 
+                     cond_set_dim=zz.shape[-1], 
+                     epochs=1, 
+                     exp_name=args.exp_name, 
+                     device=args.device, 
+                     **kwargs)
 
 
 if __name__ == '__main__':

@@ -17,7 +17,7 @@ def test_copula_estimator():
     args = TrainOptions().parse()   # get training options
     args.exp_name = 'testing'
     args.flow_name = 'cf'
-    
+
     # Create Folders
     create_folders(args)
     with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
@@ -87,34 +87,6 @@ def test_hypothesis_test_5():
     mi_1 = np.random.normal(loc=1, scale=2, size=(n,1))
     assert hypothesis_test(mi_1) == False
 
-
-
-# def test_mi_estimator_independent():
-#     # @Todo: create a class with a _sample function that outputs some copula values for either a conditionally independent or conditionally independent samples
-#     sampler = Fixed_sampler(dependent=False)
-#     use_cuda = True
-#     device = torch.device("cuda:0" if use_cuda else "cpu")
-
-#     # cop_samples = sampler.sample(num_samples=100) # @Todo: make this run in samples
-#     # log_density = torch.empty((cop_samples.shape[0], cop_samples.shape[1]))
-#     # for mm in range(1000):
-#     #     log_density_ = sampler.log_prob(cop_samples[:, mm, :]).mean()
-#     #     assert not torch.isnan(log_density_.sum())
-#     #     log_density[:, mm] = sampler.log_prob(cop_samples[:, mm, :]) # @Todo: triple check if this is correct
-#     # print('mean log:', torch.mean(log_density))
-#     # print(' mean:', torch.mean(torch.exp(log_density)))
-#     # exit()
-#     num_runs = 50
-
-#     with torch.no_grad():
-#         mi_runs = []
-#         ii = 0
-#         while ii < num_runs:
-#             mi_estimate = mi_estimator(sampler, device=device)
-#             if not np.isnan(mi_estimate):
-#                 mi_runs.append(mi_estimate)
-#                 ii += 1
-#     assert np.mean(mi_runs) == 0
 
 class Distr_Wrapper():
     def __init__(self, distribution):

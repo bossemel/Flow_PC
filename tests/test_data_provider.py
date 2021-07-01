@@ -58,4 +58,3 @@ def test_distribution():
     distr_obj = scipy.stats.norm(0, 1)
     samples = Distribution(distr_obj).sample(num_samples)
     assert (np.mean(samples) < 0.05) & (np.mean(samples) > -0.05)
-    # @Todo: put true distributions here

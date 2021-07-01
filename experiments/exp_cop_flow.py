@@ -23,7 +23,7 @@ eps = 1e-10
 
 def exp_cop_transform(inputs: torch.Tensor, copula_distr, cond_set_dim=None):
     # Transform into data object
-    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(inputs[:, 0:1], 
+    data_train, __, __, loader_train, loader_val, loader_test = split_data_copula(inputs[:, 0:1], 
                                                                                                inputs[:, 1:2], 
                                                                                                None, 
                                                                                                batch_size=128, 
@@ -31,7 +31,7 @@ def exp_cop_transform(inputs: torch.Tensor, copula_distr, cond_set_dim=None):
                                                                                                return_datasets=True)
 
     # Run experiment 
-    experiment, experiment_metrics, test_metrics = copula_estimator(loader_train=loader_train, 
+    experiment, __, test_metrics = copula_estimator(loader_train=loader_train, 
                                                                       loader_val=loader_val, 
                                                                       loader_test=loader_test, 
                                                                       cond_set_dim=None,

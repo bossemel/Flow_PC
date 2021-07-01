@@ -1,7 +1,7 @@
 import scipy.stats
 import numpy as np
 from eval.metrics import js_divergence
-from utils import gaussian_change_of_var_ND
+from utils import gaussian_change_of_var_ND, set_seeds
 import torch
 import unittest
 import random
@@ -78,10 +78,7 @@ if __name__ == '__main__':
 
     # Set Seed
     random_seed = 432
-    np.random.seed(random_seed)
-    torch.manual_seed(random_seed)
-    random.seed(random_seed)
-    torch.cuda.manual_seed(random_seed)
+    set_seeds(random_seed)
 
     for random_seed in range(5):
         np.random.seed(random_seed)

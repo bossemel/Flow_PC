@@ -10,6 +10,7 @@ import os
 import json
 import random
 import scipy.stats
+import tqdm 
 eps = 1e-10
 
 
@@ -115,7 +116,7 @@ def copula_estimator(loader_train, loader_val, loader_test, cond_set_dim, exp_na
     return experiment, experiment_metrics, test_metrics
 
 
-def mi_estimator(cop_flow, device, obs_n=10000, obs_m=10000) -> float:
+def mi_estimator(cop_flow, device, obs_n=100, obs_m=100) -> float:
     ww = torch.FloatTensor(obs_m, 5).normal_(0, 1)
 
     log_density = torch.empty((ww.shape[0], obs_m))
@@ -144,23 +145,41 @@ def hypothesis_test(mutual_information: float, threshold: float = 0.05) -> bool:
 
 
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
-                      cond_set: np.ndarray, exp_name, device, kwargs_m, kwargs_c, epochs=100, num_runs=50, batch_size=64, num_workers=0) -> bool:
-    x_uni = marginal_transform(x_input, exp_name, device=device, epochs=epochs, batch_size=batch_size, num_workers=num_workers, **kwargs_m)
-    y_uni = marginal_transform(y_input, exp_name, device=device, epochs=epochs, batch_size=batch_size, num_workers=num_workers, **kwargs_m)
-    cond_uni = marginal_transform(cond_set, exp_name, device=device, epochs=epochs, batch_size=batch_size, num_workers=num_workers, **kwargs_m)
+                      cond_set: np.ndarray, exp_name, device, kwargs_m, kwargs_c, epochs_m, epochs_c, num_runs=50, batch_size_m=128, batch_size_c=128, num_workers=0) -> bool:
+    # 
+    print('Estimating x marginal...')
+    x_uni = marginal_transform(x_input, exp_name, device=device, epochs=epochs_m, batch_size=batch_size_m, num_workers=num_workers, **kwargs_m)
+    print('Estimating y marginal...')
+    y_uni = marginal_transform(y_input, exp_name, device=device, epochs=epochs_m, batch_size=batch_size_m, num_workers=num_workers, **kwargs_m)
+    print('Estimating cond set marginals...')
+    cond_uni = marginal_transform(cond_set, exp_name, device=device, epochs=epochs_m, batch_size=batch_size_m, num_workers=num_workers, **kwargs_m)
 
-    experiment, __, __ = copula_estimator(x_uni, y_uni, cond_uni, exp_name=exp_name, device=device, epochs=epochs, batch_size=batch_size, num_workers=num_workers, **kwargs_c)
+    # Transform into data object
+    print('Creating copula dataset..')
+    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(x_uni, 
+                                                                                               y_uni,
+                                                                                               cond_uni, 
+                                                                                               batch_size=128, 
+                                                                                               num_workers=0, 
+                                                                                               return_datasets=True)
+
+    # @Todo: create data loaders 
+    print('Estimating copula..')
+    experiment, __, __ = copula_estimator(loader_train, loader_val, loader_test, cond_set_dim=cond_uni.shape[-1], exp_name=exp_name, device=device, epochs=epochs_c, batch_size=batch_size_c, num_workers=num_workers, **kwargs_c)
     cop_flow = experiment.model
 
+    print('Estimating mutual information..')
     with torch.no_grad():
         cop_flow.eval()
         mi_runs = []
         ii = 0
-        while ii < num_runs:
-            mi_estimate = mi_estimator(cop_flow, device=device)
-            if not np.isnan(mi_estimate):
-                mi_runs.append(mi_estimate)
-                ii += 1
+        with tqdm.tqdm(total=num_runs) as pbar_test:  # ini a progress bar
+            while ii < num_runs:
+                mi_estimate = mi_estimator(cop_flow, device=device)
+                if not np.isnan(mi_estimate):
+                    mi_runs.append(mi_estimate)
+                    ii += 1
+                pbar_test.update(1)
 
 
     result = hypothesis_test(np.array(mi_runs), threshold=0.05)
@@ -173,6 +192,7 @@ if __name__ == '__main__':
     # Training settings
     args = TrainOptions().parse()   # get training options
     # args.experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
+    args.flow_name = ''    
 
     # Create Folders
     create_folders(args)
@@ -193,22 +213,34 @@ if __name__ == '__main__':
     z = np.random.uniform(size=(obs, 5))
 
     # kwargs marginal
-    kwargs_m = {'n_layers': args.n_layers_c,
-              'lr': args.lr_c,
-              'weight_decay': args.weight_decay_c,
-              'amsgrad': args.amsgrad_c}
+    kwargs_m = {'n_layers': args.n_layers_m,
+              'lr': args.lr_m,
+              'weight_decay': args.weight_decay_m,
+              'amsgrad': args.amsgrad_m,
+              'n_bins': args.n_bins_m,
+              'tail_bound': args.tail_bound_m,
+              'hidden_units': args.hidden_units_m,
+              'tails': args.tails_m,
+              'identity_init': args.identity_init_m}
 
     # kwargs copula
     kwargs_c = {'n_layers': args.n_layers_c,
               'lr': args.lr_c,
               'weight_decay': args.weight_decay_c,
-              'amsgrad': args.amsgrad_c}
+              'amsgrad': args.amsgrad_c,
+              'n_bins': args.n_bins_c,
+              'tail_bound': args.tail_bound_c,
+              'hidden_units': args.hidden_units_m,
+              'tails': args.tails_m,
+              'identity_init': args.identity_init_m}
     #
     print(copula_indep_test(x, y, z, exp_name=args.exp_name, 
                             device=args.device, 
                             kwargs_m=kwargs_m,
                             kwargs_c=kwargs_c,
-                            epochs=args.epochs, 
-                            batch_size=args.batch_size, 
+                            epochs_m=args.epochs_m, 
+                            epochs_c=args.epochs_c, 
+                            batch_size_m=args.batch_size_m, 
+                            batch_size_c=args.batch_size_c, 
                             num_workers=args.num_workers))
 

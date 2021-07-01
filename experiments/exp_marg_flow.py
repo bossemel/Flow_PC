@@ -29,13 +29,13 @@ def kde_nll(data_train, data_test):
 
 def exp_marg_transform(inputs):
     # Transform into data object
-    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
+    data_train, __, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
                                                                                                  batch_size=args.batch_size_m, 
                                                                                                  num_workers=0, 
                                                                                                  return_datasets=True)
 
     # Run experiment 
-    experiment, experiment_metrics, test_metrics = marginal_estimator(loader_train=loader_train, 
+    experiment, __, test_metrics = marginal_estimator(loader_train=loader_train, 
                                                                       loader_val=loader_val, 
                                                                       loader_test=loader_test, 
                                                                       exp_name=args.exp_name, 
