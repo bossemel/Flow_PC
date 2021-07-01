@@ -86,9 +86,14 @@ def exp_marg_transform(inputs):
 
 if __name__ == '__main__':
     # Training settings
-    args = TrainOptions().parse()   # get training options
+    args = TrainOptions().parse()
     args.exp_name = 'exp_marg_flow'
-    args.experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
+    # Generate the directory names
+    flow_name = 'mf_0'
+    args.exp_path = os.path.join('results', args.exp_name, flow_name)
+    args.figures_path = os.path.join(args.exp_path, 'figures')
+    args.experiment_logs = os.path.join(args.exp_path, 'stats')
+    args.experiment_saved_models = os.path.join('saved_models', args.exp_name)
 
     # Create Folders
     create_folders(args)
