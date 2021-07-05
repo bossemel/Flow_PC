@@ -5,6 +5,9 @@ from pathlib import Path
 import sys
 import numpy as np
 import random
+import scipy
+from eval.metrics import jsd_copula
+
 eps = 1e-7
 
 
@@ -25,6 +28,7 @@ def create_folders(args):
     Path(args.figures_path).mkdir(parents=True, exist_ok=True)
     Path(args.experiment_logs).mkdir(parents=True, exist_ok=True)
     Path(args.experiment_saved_models).mkdir(parents=True, exist_ok=True)
+    return args
 
 
 class HiddenPrints:
@@ -198,3 +202,25 @@ def set_seeds(seed, use_cuda=True):
     random.seed(seed)
     if use_cuda:
         torch.cuda.manual_seed(seed)
+
+
+def kde_estimator(data_train, copula_distr, device):
+    kde_fit = scipy.stats.gaussian_kde(data_train.T)
+    kde_fit = KDE_Decorator(kde_fit, device)
+    return [jsd_copula(kde_fit, copula_distr, device, num_samples=100000)]
+
+class KDE_Decorator():
+    def __init__(self, model, device):
+        self.model = model
+        self.norm_distr = scipy.stats.norm()
+        self.device = device
+
+    def log_pdf_normal(self, inputs, context=None):
+        return torch.log(torch.from_numpy(self.model.pdf(inputs.T.cpu().numpy()))).T.to(self.device)
+
+    def log_pdf_uniform(self, inputs, context=None):
+        #inputs = torch.from_numpy(self.norm_distr.ppf(inputs.cpu().numpy()))
+        return gaussian_change_of_var_ND(inputs, self.log_pdf_normal, context=context).to(self.device)
+
+    def sample_copula(self, num_samples, context=None):
+        return torch.from_numpy(self.norm_distr.cdf(self.model.resample(num_samples).T)).to(self.device)

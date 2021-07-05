@@ -301,17 +301,14 @@ def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers, ret
     return loader_train, loader_val, loader_test
 
 
-def mutivariate_copula(mix, copula='clayton', marginal='gamma', num_samples=10000, disable_marginal=False):
+def mutivariate_copula(mix, copula, marginal, theta, num_samples=10000, disable_marginal=False):
     if mix is False:
         if copula == 'clayton':
             pair_copula = pv.BicopFamily.clayton
-            theta = 2
         elif copula == 'frank':
             pair_copula = pv.BicopFamily.frank
-            theta = 5
         elif copula == 'gumbel':
             pair_copula = pv.BicopFamily.gumbel
-            theta = 5
         else:
             raise ValueError('Unknown copula type.')
 
@@ -319,9 +316,9 @@ def mutivariate_copula(mix, copula='clayton', marginal='gamma', num_samples=1000
         bicop = pv.Bicop(family=pair_copula, parameters=[theta])
         pcs = [[bicop, bicop, bicop], [bicop, bicop], [bicop]]
     else:
-        bicop_1 = pv.Bicop(family=pv.BicopFamily.gumbel, parameters=[5])
-        bicop_2 = pv.Bicop(family=pv.BicopFamily.clayton, parameters=[2])
-        bicop_3 = pv.Bicop(family=pv.BicopFamily.frank, parameters=[5])
+        bicop_1 = pv.Bicop(family=pv.BicopFamily.gumbel, parameters=theta)
+        bicop_2 = pv.Bicop(family=pv.BicopFamily.clayton, parameters=theta)
+        bicop_3 = pv.Bicop(family=pv.BicopFamily.frank, parameters=theta)
         pcs = [[bicop_1, bicop_2, bicop_3], [bicop_1, bicop_2], [bicop_1]]
 
     # Specify R-vine matrix
@@ -329,13 +326,25 @@ def mutivariate_copula(mix, copula='clayton', marginal='gamma', num_samples=1000
 
     # Set-up a vine copula
     copula = pv.Vinecop(matrix=mat, pair_copulas=pcs)
-    copula_samples = copula.simulate(n=num_samples)
+    copula = VineCop_Decorator(copula)
+    copula_samples = copula.sample(num_samples)
     if not disable_marginal:
         for dim in range(copula_samples.shape[1]):
             copula_samples[:, dim] = marginal_transform(copula_samples[:, dim], marginal=marginal,
                                                                   mu=mu, var=var, alpha=alpha)
     assert not np.isnan(np.sum(copula_samples)), '{}'.format(copula_samples[np.isnan(copula_samples)])
-    return torch.from_numpy(copula_samples)
+    return torch.from_numpy(copula_samples), copula
+
+
+class VineCop_Decorator():
+    def __init__(self, vinecop):
+        self.vinecop = vinecop
+
+    def sample(self, num_samples):
+        return self.vinecop.simulate(n=num_samples)
+
+    def pdf(self, inputs):
+        return self.vinecop.pdf(inputs)
 
 
 if __name__ == '__main__':
