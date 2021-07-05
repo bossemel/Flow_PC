@@ -181,9 +181,8 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
                     ii += 1
                 pbar_test.update(1)
 
-
+    print('Running hypothesis test..')
     result = hypothesis_test(np.array(mi_runs), threshold=0.05)
-
     return result
 
 

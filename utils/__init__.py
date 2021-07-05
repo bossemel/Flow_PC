@@ -158,7 +158,7 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
 
         if current_hyperparams not in tested_combinations:
             if flow_type == 'cop_flow':
-                hyperparams_string = 'n_layers, hidden_units, n_blocks, n_bins, dropout, lr, weight_decay, \
+                hyperparams_string = 'n_layers, hidden_units, n_bins, dropout, lr, weight_decay, \
                 tail_bound, batch_norm, amsgrad, clip_grad'
             else:
                 hyperparams_string = 'n_layers, hidden_units, n_blocks, n_bins, lr, weight_decay, clip_grad_norm, \

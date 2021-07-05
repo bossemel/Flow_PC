@@ -113,8 +113,8 @@ if __name__ == '__main__':
     copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=True)
     inputs = torch.from_numpy(copula_distr.sample(args.obs)) # @Todo: create conditional inputs
     
-    exp_cop_transform(inputs, copula_distr)
-    exit()
+    # exp_cop_transform(inputs, copula_distr)
+    # exit()
 
     # Transform into data object
     data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(inputs[:, 0:1], 
@@ -125,4 +125,5 @@ if __name__ == '__main__':
                                                                                                return_datasets=True)
 
     #random_search(loader_train, loader_val, loader_test, args.device, experiment_logs, iterations=200, epochs=50)
-    random_search(copula_estimator, 'random_search_cop', loader_train, loader_val, loader_test, args.device, args.experiment_logs, iterations=200, epochs=args.epochs_c)
+    random_search(copula_estimator, 'random_search_cop', loader_train, loader_val,
+     loader_test, args.device, args.experiment_logs, iterations=200, epochs=args.epochs_c, flow_type='cop_flow')

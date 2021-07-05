@@ -83,9 +83,9 @@ class TrainOptions:
         self.parser.add_argument(
             '--n_layers_c', type=int, default=8, help='Number of spline layers in flow')
         self.parser.add_argument(
-            '--hidden_units_c', type=int, default=8, help='Number of hidden units in spline layer')
+            '--hidden_units_c', type=int, default=64, help='Number of hidden units in spline layer')
         self.parser.add_argument(
-            '--n_blocks_c', type=int, default=9, help='Number of residual blocks in each spline layer')
+            '--n_blocks_c', type=int, default=20, help='Number of residual blocks in each spline layer')
         self.parser.add_argument(
             '--n_bins_c', type=int, default=45, help='Number of bins in piecewise spline transform')
         self.parser.add_argument(
