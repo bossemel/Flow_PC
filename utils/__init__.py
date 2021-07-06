@@ -111,7 +111,6 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
         amsgrad = np.random.choice([True, False])
         clip_grad_norm = np.random.choice([True, False])
         identity_init = np.random.choice([True, False])
-        tails = np.random.choice(['linear', None])
 
         kwargs = {'n_layers': n_layers,
                     'hidden_units': hidden_units,
@@ -122,7 +121,6 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
                     'amsgrad': amsgrad,
                     'clip_grad_norm': clip_grad_norm,
                     'identity_init': identity_init,
-                    'tails': tails,
                     'cond_set_dim': cond_set_dim}
         if flow_type == 'cop_flow':
             dropout = 0.05 * np.random.choice(range(1, 6))
@@ -131,6 +129,8 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
             kwargs['use_batch_norm'] = use_batch_norm
             n_blocks = np.random.choice(range(1, 10))
             kwargs['n_blocks'] = n_blocks
+            unconditional_transform = np.random.choice([True, False])
+            kwargs['unconditional_transform'] = unconditional_transform
 
             current_hyperparams = (n_layers,
                                    hidden_units,
@@ -144,9 +144,12 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
                                    amsgrad,
                                    clip_grad_norm,
                                    identity_init,
-                                   tails)
+                                   unconditional_transform)
 
         elif flow_type == 'marg_flow':
+            tails = np.random.choice(['linear', None])
+            kwargs['tails'] = tails
+
             current_hyperparams = (n_layers,
                                    hidden_units,
                                    n_bins,
@@ -163,10 +166,10 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
         if current_hyperparams not in tested_combinations:
             if flow_type == 'cop_flow':
                 hyperparams_string = 'n_layers, hidden_units, n_blocks, n_bins, dropout, lr, weight_decay, \
-                tail_bound, batch_norm, amsgrad, clip_grad, identity init, tails'
+                tail_bound, batch_norm, amsgrad, clip_grad, identity init, unconditional_transform'
             else:
                 hyperparams_string = 'n_layers, hidden_units, n_blocks, n_bins, lr, weight_decay, clip_grad_norm, \
-                tail_bound, identity_init_m, tails_m'
+                tail_bound, identity_init_m, tails'
             print('{}: {}'.format(hyperparams_string, current_hyperparams))
             with HiddenPrints():
                 experiment, experiment_metrics, __ = estimator(loader_train=loader_train, 

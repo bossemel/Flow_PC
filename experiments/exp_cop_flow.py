@@ -49,7 +49,13 @@ def exp_cop_transform(inputs: torch.Tensor, copula_distr, cond_inputs: torch.Ten
                                                     hidden_units=args.hidden_units_c,
                                                     tail_bound=args.tail_bound_c,
                                                     lr=args.lr_c,
-                                                    weight_decay=args.weight_decay_c)
+                                                    weight_decay=args.weight_decay_c,
+                                                    n_blocks=args.n_blocks_c,
+                                                    dropout=args.dropout_c,
+                                                    use_batch_norm=args.batch_norm_c,
+                                                    tails=args.tails_c,
+                                                    n_bins=args.n_bins_c,
+                                                    unconditional_transform=args.unconditional_transform_c)
     # @Todo: recheck: is the flow in eval mode here?
     if cond_inputs is not None:
         normal_distr = torch.distributions.normal.Normal(0, 1)
@@ -149,25 +155,40 @@ if __name__ == '__main__':
     # Set Seed
     set_seeds(seed=args.seed, use_cuda=use_cuda)
 
-    exp_2D_cop(args)
-    exit()
-    exp_4D_cop(args)
-    exit()
-    # Get inputs
+    # kwargs = {'n_layers': args.n_layers_c,
+    #           'lr': args.lr_c,
+    #           'weight_decay': args.weight_decay_c,
+    #           'amsgrad': args.amsgrad_c,
+    #           'hidden_units': args.hidden_units_c,
+    #           'tail_bound': args.tail_bound_c,
+    #           'n_blocks': args.n_blocks_c,
+    #           'dropout': args.dropout_c,
+    #           'use_batch_norm': args.batch_norm_c,
+    #           'tails': args.tails_c, 
+    #           'n_bins': args.n_bins_c,
+    #           'unconditional_transform': args.unconditional_transform_c}
+              
+    # exp_2D_cop(args)
+    # exit()
+    # exp_4D_cop(args)
+    # exit()
+    #Get inputs
     copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=True)
     inputs = torch.from_numpy(copula_distr.sample(args.obs)) # @Todo: create conditional inputs
+    normal_distr = torch.distributions.normal.Normal(0, 1)
+    inputs = normal_distr.icdf(inputs).float()
     
-    # exp_cop_transform(inputs, copula_distr)
-    # exit()
+    #exp_cop_transform(inputs, copula_distr)
+    #exit()
 
-    # # Transform into data object
-    # data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(inputs[:, 0:1], 
-    #                                                                                            inputs[:, 1:2], 
-    #                                                                                            None, 
-    #                                                                                            batch_size=128, 
-    #                                                                                            num_workers=0, 
-    #                                                                                            return_datasets=True)
+    # Transform into data object
+    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(inputs[:, 0:1], 
+                                                                                               inputs[:, 1:2], 
+                                                                                               None, 
+                                                                                               batch_size=128, 
+                                                                                               num_workers=0, 
+                                                                                               return_datasets=True)
 
-    # #random_search(loader_train, loader_val, loader_test, args.device, experiment_logs, iterations=200, epochs=50)
-    # random_search(copula_estimator, 'random_search_cop', loader_train, loader_val,
-    #  loader_test, args.device, args.experiment_logs, iterations=200, epochs=args.epochs_c, flow_type='cop_flow')
+    #random_search(loader_train, loader_val, loader_test, args.device, experiment_logs, iterations=200, epochs=50)
+    random_search(copula_estimator, 'random_search_cop', loader_train, loader_val,
+     loader_test, args.device, args.experiment_logs, iterations=200, epochs=args.epochs_c, flow_type='cop_flow')

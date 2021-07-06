@@ -8,10 +8,10 @@ import torch.nn as nn
 
 
 def cop_flow_constructor(n_layers, context_dim, hidden_units, tail_bound , n_blocks, dropout,
-                         use_batch_norm, tails, n_bins, unconditional_transform, **kwargs):
+                         use_batch_norm, n_bins, unconditional_transform, **kwargs):
 
     def create_transform(ii, hidden_units, context_dim, n_blocks, dropout, use_batch_norm, 
-                         tails, tail_bound, n_bins, unconditional_transform, **kwargs):
+                         tail_bound, n_bins, unconditional_transform, **kwargs):
         return transforms.PiecewiseRationalQuadraticCouplingTransform(
             mask=utils.create_alternating_binary_mask(features=2, even=(ii % 2 == 0)),
             transform_net_create_fn=lambda in_features, out_features: ResidualNet(
@@ -23,7 +23,7 @@ def cop_flow_constructor(n_layers, context_dim, hidden_units, tail_bound , n_blo
                 dropout_probability=dropout,
                 use_batch_norm=use_batch_norm
             ),
-            tails=tails,
+            tails='linear',
             tail_bound=tail_bound,
             num_bins=n_bins,
             apply_unconditional_transform=unconditional_transform
@@ -37,7 +37,6 @@ def cop_flow_constructor(n_layers, context_dim, hidden_units, tail_bound , n_blo
                          n_blocks=n_blocks, 
                          dropout=dropout, 
                          use_batch_norm=use_batch_norm, 
-                         tails=tails, 
                          tail_bound=tail_bound, 
                          n_bins=n_bins, 
                          unconditional_transform=unconditional_transform) for ii in range(n_layers)])
