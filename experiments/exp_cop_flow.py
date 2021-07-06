@@ -155,23 +155,10 @@ if __name__ == '__main__':
     # Set Seed
     set_seeds(seed=args.seed, use_cuda=use_cuda)
 
-    # kwargs = {'n_layers': args.n_layers_c,
-    #           'lr': args.lr_c,
-    #           'weight_decay': args.weight_decay_c,
-    #           'amsgrad': args.amsgrad_c,
-    #           'hidden_units': args.hidden_units_c,
-    #           'tail_bound': args.tail_bound_c,
-    #           'n_blocks': args.n_blocks_c,
-    #           'dropout': args.dropout_c,
-    #           'use_batch_norm': args.batch_norm_c,
-    #           'tails': args.tails_c, 
-    #           'n_bins': args.n_bins_c,
-    #           'unconditional_transform': args.unconditional_transform_c}
-              
-    # exp_2D_cop(args)
-    # exit()
-    # exp_4D_cop(args)
-    # exit()
+    exp_2D_cop(args)
+    exit()
+    exp_4D_cop(args)
+    exit()
     #Get inputs
     copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=True)
     inputs = torch.from_numpy(copula_distr.sample(args.obs)) # @Todo: create conditional inputs

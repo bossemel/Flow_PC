@@ -14,108 +14,107 @@ class TrainOptions:
         self.parser.add_argument(
             '--marginal', default='uniform',
             choices=['gaussian', 'uniform', 'gamma', 'lognormal', 'gmm', 'mix_gamma',
-                     'mix_lognormal', 'mix_gauss_gamma'], help='marginal in first dimension')
+                     'mix_lognormal', 'mix_gauss_gamma'], help='Dataset marginal distribution.')
         self.parser.add_argument(
-            '--alpha', type=float, default=5, help='alpha for gamma distribution')
+            '--alpha', type=float, default=5, help='Alpha for gamma distribution.')
         self.parser.add_argument(
-            '--mu', type=float, default=0, help='mu for marginal gaussian distribution')
+            '--mu', type=float, default=0, help='Mu for marginal gaussian distribution.')
         self.parser.add_argument(
-            '--var', type=float, default=1, help='var for marginal gaussian distribution')
+            '--var', type=float, default=1, help='Var for marginal gaussian distribution.')
         self.parser.add_argument(
-            '--low', type=float, default=0, help='lower bound for uniform distribution')
+            '--low', type=float, default=0, help='Lower bound for uniform distribution.')
         self.parser.add_argument(
-            '--high', type=float, default=1, help='upper bound for uniform distirbution')
+            '--high', type=float, default=1, help='Upper bound for uniform distirbution.')
         self.parser.add_argument(
-            '--obs', type=int, default=10000, help='How many data samples to generate')
+            '--obs', type=int, default=10000, help='How many data samples to generate.')
 
     def dataset_copula(self):
         self.parser.add_argument(
             '--copula', default='clayton',
-            choices=['gaussian', 'tdistr', 'clayton', 'frank', 'gumbel', 'independent'])
+            choices=['gaussian', 'tdistr', 'clayton', 'frank', 'gumbel', 'independent'],
+            help='Dataset copula distribution.')
         self.parser.add_argument(
-            '--theta', type=float, default=2.0, help='theta for copula sampling')
+            '--theta', type=float, default=2.0, help='Theta for copula sampling.')
 
     def optimizer_marg(self):
         self.parser.add_argument(
-            '--weight_decay_m', type=float, default=1e-10, help='adam optimizer weight decay')
+            '--weight_decay_m', type=float, default=1e-10, help='Adam optimizer weight decay.')
         self.parser.add_argument(
-            '--lr_m', type=float, default=0.01, help='learning rate (default: 0.0001)')
+            '--lr_m', type=float, default=0.01, help='Learning rate (default: 0.0001).')
         self.parser.add_argument(
-            '--amsgrad_m', action='store_true', default=False)
+            '--amsgrad_m', action='store_true', default=False, help='Use amsgrad optimizer.')
         self.parser.add_argument(
-            '--batch_size_m', type=int, default=128, help='input batch size for training')
+            '--batch_size_m', type=int, default=128, help='Input batch size for training.')
         self.parser.add_argument(
-            '--epochs_m', type=int, default=50, help='number of epochs to train (default: 100)')
+            '--epochs_m', type=int, default=50, help='Number of epochs to train (default: 100).')
         self.parser.add_argument(
-            '--clip_grad_norm_m', action='store_true', default=False, help='number of epochs to train (default: 100)')
+            '--clip_grad_norm_m', action='store_true', default=False, help='Gradient clipping.')
 
     def optimizer_cop(self):
         self.parser.add_argument(
-            '--weight_decay_c', type=float, default=0.0001, help='adam optimizer weight decay')
+            '--weight_decay_c', type=float, default=0.0001, help='adam optimizer weight decay.')
         self.parser.add_argument(
-            '--lr_c', type=float, default=0.001, help='learning rate (default: 0.0001)')
+            '--lr_c', type=float, default=0.001, help='learning rate (default: 0.0001).')
         self.parser.add_argument(
             '--amsgrad_c', action='store_false', default=True)
         self.parser.add_argument(
-            '--batch_size_c', type=int, default=128, help='input batch size for training')
+            '--batch_size_c', type=int, default=128, help='input batch size for training.')
         self.parser.add_argument(
-            '--epochs_c', type=int, default=50, help='number of epochs to train (default: 100)')
+            '--epochs_c', type=int, default=50, help='number of epochs to train (default: 100).')
         self.parser.add_argument(
-            '--clip_grad_norm_c', action='store_false', default=True)
+            '--clip_grad_norm_c', action='store_false', default=True, help='Gradient clipping..')
         self.parser.add_argument(
-            '--dropout_c', type=float, default=0.15, help='Dropout probability in flow')
+            '--dropout_c', type=float, default=0.15, help='Dropout probability in flow.')
         self.parser.add_argument(
-            '--unconditional_transform_c', action='store_true', default=False, help='Unconditionally transform identity features')
+            '--unconditional_transform_c', action='store_true', default=False, help='Unconditionally transform identity features.')
 
 # @Todo: write the correct help functions
     def marg_flow(self):
         self.parser.add_argument(
-            '--n_layers_m', type=int, default=5, help='Number of spline layers in flow')
+            '--n_layers_m', type=int, default=5, help='Number of spline layers in flow.')
         self.parser.add_argument(
-            '--hidden_units_m', type=int, default=4, help='Number of hidden units in spline layer')
+            '--hidden_units_m', type=int, default=4, help='Number of hidden units in spline layer.')
         self.parser.add_argument(
-            '--n_bins_m', type=int, default=45, help='Number of bins in piecewise spline transform')
+            '--n_bins_m', type=int, default=45, help='Number of bins in piecewise spline transform.')
         self.parser.add_argument(
-            '--tail_bound_m', type=int, default=32, help='Bounds of spline region')
+            '--tail_bound_m', type=int, default=32, help='Bounds of spline region.')
         self.parser.add_argument(
-            '--identity_init_m', action='store_true', default=False, help='adam optimizer weight decay')
+            '--identity_init_m', action='store_true', default=False, help='Identity initialization.')
         self.parser.add_argument(
-            '--tails_m', type=str, default=None, help='Function type outside spline region')
+            '--tails_m', type=str, default=None, help='Function type outside spline region.')
 
     def cop_flow(self):
         self.parser.add_argument(
-            '--n_layers_c', type=int, default=8, help='Number of spline layers in flow')
+            '--n_layers_c', type=int, default=8, help='Number of spline layers in flow.')
         self.parser.add_argument(
-            '--hidden_units_c', type=int, default=32, help='Number of hidden units in spline layer')
+            '--hidden_units_c', type=int, default=32, help='Number of hidden units in spline layer.')
         self.parser.add_argument(
-            '--n_blocks_c', type=int, default=2, help='Number of residual blocks in each spline layer')
+            '--n_blocks_c', type=int, default=2, help='Number of residual blocks in each spline layer.')
         self.parser.add_argument(
-            '--n_bins_c', type=int, default=40, help='Number of bins in piecewise spline transform')
+            '--n_bins_c', type=int, default=40, help='Number of bins in piecewise spline transform.')
         self.parser.add_argument(
-            '--tail_bound_c', type=int, default=32, help='Bounds of spline region')
+            '--tail_bound_c', type=int, default=32, help='Bounds of spline region.')
         self.parser.add_argument(
-            '--batch_norm_c', type=int, default=True, help='Bounds of spline region')
+            '--batch_norm_c', type=int, default=True, help='Batch normalization for ResNet.')
         self.parser.add_argument(
-            '--identity_init_c', action='store_false', default=True, help='adam optimizer weight decay')
+            '--identity_init_c', action='store_false', default=True, help='Identity initialization.')
         self.parser.add_argument(
-            '--tails_c', type=str, default='linear', help='Function type outside spline region')
+            '--tails_c', type=str, default='linear', help='Function type outside spline region.')
 
     def initialize(self):
         # Training settings
-        self.parser = argparse.ArgumentParser(description='PyTorch Flows')
+        self.parser = argparse.ArgumentParser(description='PyTorch Flows.')
 
         self.parser.add_argument(
-            '--exp_name', default='default_name', help='experiment name')
+            '--exp_name', default='default_name', help='Experiment name.')
         self.parser.add_argument(
-            '--seed', type=int, default=4, help='random seed')
+            '--seed', type=int, default=4, help='Random seed.')
         self.parser.add_argument(
-            '--num_workers', type=int, default=0, help='number of workers in the data loader (default: 0)')
-
+            '--num_workers', type=int, default=0, help='Number of workers in the data loader (default: 0).')
 
         # Dataset
         self.dataset_marginal()
         self.dataset_copula()
-
 
         # Optim Options
         self.optimizer_marg()
@@ -125,8 +124,8 @@ class TrainOptions:
         self.marg_flow()
         self.cop_flow()
 
-        self.parser.add_argument(
-            '--num_hid_layers', type=int, default=4, help='adam optimizer weight decay')
+        self.initialized = True
+        return self.parser
 
 
 
@@ -235,8 +234,6 @@ class TrainOptions:
         #     '--tails_m', type=str, default='linear', help='Function type outside spline region')
         #
 
-        self.initialized = True
-        return self.parser
 
     def gather_options(self):
         """Initialize our parser with basic options(only once).
