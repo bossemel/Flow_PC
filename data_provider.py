@@ -203,7 +203,7 @@ def save_dataset_2D(copula, marginal_1, marginal_2, theta, num_samples, mu, var,
     np.save(os.path.join(os.path.join('datasets', 'joint_data'), '2D_{}_{}_{}_tst'.format(copula, marginal_1, marginal_2)), data_test)
 
 
-def save_dataset_4D(mix, copula='clayton', marginal='gamma', num_samples=10000):
+def save_dataset_4D(mix, copula='clayton', marginal='gamma'):
     samples = mutivariate_copula(mix, marginal=marginal, disable_marginal=False)
     np.save(os.path.join(os.path.join('datasets', 'joint_data'), '4D_{}_{}_mix{}'.format(copula, marginal, mix)), samples)
 
@@ -343,8 +343,8 @@ class VineCop_Decorator():
     def sample(self, num_samples):
         return self.vinecop.simulate(n=num_samples)
 
-    def pdf(self, inputs):
-        return self.vinecop.pdf(inputs)
+    def pdf(self, inputs, cond_copula_pdf):
+        return self.vinecop.pdf(inputs) / cond_copula_pdf(inputs[:, 2:4])
 
 
 if __name__ == '__main__':

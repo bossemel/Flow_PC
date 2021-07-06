@@ -7,9 +7,11 @@ import torch
 import torch.nn as nn
 
 
-def cop_flow_constructor(n_layers, context_dim, hidden_units, tail_bound , **kwargs):
+def cop_flow_constructor(n_layers, context_dim, hidden_units, tail_bound , n_blocks, dropout,
+                         use_batch_norm, tails, n_bins, unconditional_transform, **kwargs):
 
-    def create_transform(ii, hidden_units, context_dim, tail_bound):
+    def create_transform(ii, hidden_units, context_dim, n_blocks, dropout, use_batch_norm, 
+                         tails, tail_bound, n_bins, unconditional_transform, **kwargs):
         return transforms.PiecewiseRationalQuadraticCouplingTransform(
             mask=utils.create_alternating_binary_mask(features=2, even=(ii % 2 == 0)),
             transform_net_create_fn=lambda in_features, out_features: ResidualNet(
@@ -17,20 +19,28 @@ def cop_flow_constructor(n_layers, context_dim, hidden_units, tail_bound , **kwa
                 out_features=out_features,
                 hidden_features=hidden_units,
                 context_features=context_dim,
-                # num_blocks=self.n_blocks_c,
-                # dropout_probability=self.dropout_c,
-                # use_batch_norm=self.use_batch_norm_c
+                num_blocks=n_blocks,
+                dropout_probability=dropout,
+                use_batch_norm=use_batch_norm
             ),
-            tails='linear',
+            tails=tails,
             tail_bound=tail_bound,
-            # tails=self.tails,
-            # tail_bound=self.tail_bound_c,
-            # num_bins=self.n_bins_c,
-            # apply_unconditional_transform=self.unconditional_transform
+            num_bins=n_bins,
+            apply_unconditional_transform=unconditional_transform
         )
+
     # Define an invertible transformation.
     transform = transforms.CompositeTransform([
-        create_transform(ii, hidden_units, context_dim, tail_bound=tail_bound) for ii in range(n_layers)])
+        create_transform(ii, 
+                         hidden_units=hidden_units, 
+                         context_dim=context_dim, 
+                         n_blocks=n_blocks, 
+                         dropout=dropout, 
+                         use_batch_norm=use_batch_norm, 
+                         tails=tails, 
+                         tail_bound=tail_bound, 
+                         n_bins=n_bins, 
+                         unconditional_transform=unconditional_transform) for ii in range(n_layers)])
 
     # Define a base distribution.
     base_distribution = distributions.StandardNormal(shape=[2])

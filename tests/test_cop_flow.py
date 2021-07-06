@@ -39,7 +39,13 @@ def test_copula_estimator():
               'weight_decay': args.weight_decay_c,
               'amsgrad': args.amsgrad_c,
               'hidden_units': args.hidden_units_c,
-              'tail_bound': args.tail_bound_c}
+              'tail_bound': args.tail_bound_c,
+              'n_blocks': args.n_blocks_c,
+              'dropout': args.dropout_c,
+              'use_batch_norm': args.batch_norm_c,
+              'tails': args.tails_c, 
+              'n_bins': args.n_bins_c,
+              'unconditional_transform': args.unconditional_transform_c}
 
     # Transform into data object
     __, __, __, loader_train, loader_val, loader_test = split_data_copula(xx, 
