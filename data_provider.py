@@ -154,6 +154,8 @@ class Copula_Distr:
         if self.copula == 'clayton':
             assert hasattr(self, 'theta'), 'Please specify theta for %r copula' % self.copula
             uu, vv = sample_clayton(num_samples, self.theta)
+            if np.max(uu) > 1 or np.max(vv) > 1:
+                uu, vv = sample_clayton(num_samples, self.theta)
 
         # frank copula
         elif self.copula == 'frank':
@@ -177,10 +179,10 @@ class Copula_Distr:
 
         assert xx.all() > 0 & xx.all() < 1
 
-        # Apply inverse Gaussian
-        if transform:
-            norm = scipy.stats.norm()
-            xx = norm.ppf(xx)
+        # # Apply inverse Gaussian
+        # if transform:
+        #     norm = scipy.stats.norm()
+        #     xx = norm.ppf(xx)
 
         return xx
 

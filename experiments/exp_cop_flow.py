@@ -84,10 +84,11 @@ def exp_cop_transform(inputs: torch.Tensor, copula_distr, cond_inputs: torch.Ten
     experiment_logs = os.path.join('results', args.exp_name, 'cf', 'stats')
 
     # # Comparison to empirical CDF Transform:
-    test_metrics['kde_jsd'] = kde_estimator(data_train, copula_distr, args.device) # @Todo: write conditional kde estimator
+    print(copula_distr.theta)
+    test_metrics['kde_jsd'] = kde_estimator(data_train, copula_distr, 100000, args.device) # @Todo: write conditional kde estimator
 
     print('Flow JSD: {}, KDE JSD: {}'.format(test_metrics['cop_flow_jsd'][0], test_metrics['kde_jsd'][0]))
-    num_runs = 30
+    num_runs = 1
 
     print('Estimating mutual information..')
     with torch.no_grad():
@@ -112,7 +113,7 @@ def exp_cop_transform(inputs: torch.Tensor, copula_distr, cond_inputs: torch.Ten
 
 
 def exp_2D_cop(args):
-    experiments = [('indep_2D', 'independent', 2),
+    experiments = [('indep_2D', 'independent', None),
                    ('clayton_con_2D', 'clayton', 2), 
                    ('clayton_uncon_2D', 'clayton', 0+eps), 
                    ('frank_con_2D', 'frank', 5), 
@@ -122,6 +123,7 @@ def exp_2D_cop(args):
 
     for experiment in experiments:
         args.exp_name = 'exp_cop_flow' + experiment[0]
+        print('Starting {}'.format(args.exp_name))
         args.copula = experiment[1]
         args.theta = experiment[2]
 
@@ -131,7 +133,7 @@ def exp_2D_cop(args):
             json.dump(args.__dict__, f, indent=2)
 
         # Get inputs
-        copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=True)
+        copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=False)
         inputs = torch.from_numpy(copula_distr.sample(args.obs)) # @Todo: create conditional inputs
         normal_distr = torch.distributions.normal.Normal(0, 1)
         inputs = normal_distr.icdf(inputs).float()

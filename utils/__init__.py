@@ -207,10 +207,10 @@ def set_seeds(seed, use_cuda=True):
         torch.cuda.manual_seed(seed)
 
 
-def kde_estimator(data_train, copula_distr, device):
+def kde_estimator(data_train, copula_distr, num_samples, device):
     kde_fit = scipy.stats.gaussian_kde(data_train.T)
     kde_fit = KDE_Decorator(kde_fit, device)
-    return [jsd_copula(kde_fit, copula_distr, device, num_samples=100000).item()]
+    return [jsd_copula(kde_fit, copula_distr, device, num_samples=num_samples).item()]
 
 class KDE_Decorator():
     def __init__(self, model, device):

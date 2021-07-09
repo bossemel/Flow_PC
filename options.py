@@ -60,7 +60,7 @@ class TrainOptions:
         self.parser.add_argument(
             '--batch_size_c', type=int, default=128, help='input batch size for training.')
         self.parser.add_argument(
-            '--epochs_c', type=int, default=50, help='number of epochs to train (default: 100).')
+            '--epochs_c', type=int, default=100, help='number of epochs to train (default: 100).')
         self.parser.add_argument(
             '--clip_grad_norm_c', action='store_true', default=False, help='Gradient clipping..')
         self.parser.add_argument(
