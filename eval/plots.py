@@ -53,6 +53,6 @@ def visualize_joint(data, figures_path, name, axis_1_name=None, axis_2_name=None
         axis_2_name = 'X2'
 
     fig = plt.figure()
-    fig = sns.jointplot(data[:, 0], data[:, 1], kind='hex')
+    fig = sns.jointplot(x=data[:, 0], y=data[:, 1], kind='hex')
     fig.set_axis_labels(axis_1_name, axis_2_name, fontsize=16)
     fig.savefig(os.path.join(figures_path, name + '.pdf'), dpi=300, bbox_inches='tight')

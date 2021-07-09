@@ -138,47 +138,49 @@ def gumbel_cdf(theta_, uu, vv):
         return cdfs
 
 
-def copula_pdf(copula_, theta_, uu, vv):
+def copula_pdf(copula, theta, uu, vv):
     uu = remove_0_1(uu).numpy().astype('float64')
     vv = remove_0_1(vv).numpy().astype('float64')
     assert np.min(uu) > 0 and np.max(uu) < 1, 'min: {}, max: {}'.format(np.min(uu), np.max(uu))
     assert np.min(vv) > 0 and np.max(vv) < 1, 'min: {}, max: {}'.format(np.min(vv), np.max(vv))
 
-    if copula_ == 'clayton':
-        a = (theta_ + 1) * np.power(np.multiply(uu, vv), -(theta_ + 1))
-        assert np.isfinite(a.sum()), 'np.multiply(uu, vv): {}, -(theta_ + 1): {}'.format(np.multiply(uu, vv).dtype,
-                                                                                         type(-(theta_ + 1)))
-        b = np.power(uu, -theta_) + np.power(vv, -theta_) - 1
-        c = -(2 * theta_ + 1) / theta_
+    if copula == 'clayton':
+        a = (theta + 1) * np.power(np.multiply(uu, vv), -(theta + 1))
+        assert np.isfinite(a.sum()), 'np.multiply(uu, vv): {}, -(theta + 1): {}'.format(np.multiply(uu, vv).dtype,
+                                                                                         type(-(theta + 1)))
+        b = np.power(uu, -theta) + np.power(vv, -theta) - 1
+        c = -(2 * theta + 1) / theta
         pdf = a * np.power(b, c, dtype=np.float64)
-        assert np.min(pdf) > 0, 'clayton_{}_{}_b:{} c: {}'.format(np.min(pdf), theta_, b, c)
+        assert np.min(pdf) > 0, 'clayton_{}_{}_b:{} c: {}'.format(np.min(pdf), theta, b, c)
         return pdf
-    if copula_ == 'frank':
-        if theta_ == 0:
+    elif copula == 'frank':
+        if theta == 0:
             return np.multiply(uu, vv)
 
         else:
-            num = np.multiply(np.multiply(-theta_, _g(theta_, 1)), 1 + _g(theta_, np.add(uu, vv)))
-            aux = np.multiply(_g(theta_, uu), _g(theta_, vv)) + _g(theta_, 1)
+            num = np.multiply(np.multiply(-theta, _g(theta, 1)), 1 + _g(theta, np.add(uu, vv)))
+            aux = np.multiply(_g(theta, uu), _g(theta, vv)) + _g(theta, 1)
             den = np.power(aux, 2, dtype=np.float64)
             pdf = num / den
             assert np.min(pdf) >= 0, 'frank_{}'.format(np.min(pdf))
             return pdf
-    if copula_ == 'gumbel':
-        if theta_ == 1:
+    elif copula == 'gumbel':
+        if theta == 1:
             return np.multiply(uu, vv)
 
         else:
             a = np.power(np.multiply(uu, vv), -1, dtype=np.float64)
-            tmp = np.power(-np.log(uu), theta_) + np.power(-np.log(vv), theta_)
-            b = np.power(tmp, -2 + 2.0 / theta_, dtype=np.float64)
+            tmp = np.power(-np.log(uu), theta) + np.power(-np.log(vv), theta)
+            b = np.power(tmp, -2 + 2.0 / theta, dtype=np.float64)
 
-            c = np.power(np.multiply(np.log(uu), np.log(vv)), theta_ - 1)
+            c = np.power(np.multiply(np.log(uu), np.log(vv)), theta - 1)
 
-            d = 1 + (theta_ - 1) * np.power(tmp, -1.0 / theta_, dtype=np.float64)
-            pdf = gumbel_cdf(theta_, uu, vv) * a * b * c * d
+            d = 1 + (theta - 1) * np.power(tmp, -1.0 / theta, dtype=np.float64)
+            pdf = gumbel_cdf(theta, uu, vv) * a * b * c * d
             assert np.min(pdf) >= 0, 'gumbel_{}'.format(np.min(pdf))
             return pdf
+    elif copula == 'independent':
+        return np.ones_like(uu)
     else:
         raise NotImplementedError
 

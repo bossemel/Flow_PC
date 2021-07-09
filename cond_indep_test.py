@@ -116,14 +116,15 @@ def copula_estimator(loader_train, loader_val, loader_test, cond_set_dim, exp_na
     return experiment, experiment_metrics, test_metrics
 
 
-def mi_estimator(cop_flow, device, obs_n=100, obs_m=100) -> float:
-    ww = torch.FloatTensor(obs_m, 5).normal_(0, 1)
+def mi_estimator(cop_flow, device, obs_n=1000, obs_m=1000, cond_set_dim=False) -> float:
+    if cond_set_dim:
+        ww = torch.FloatTensor(obs_m, cond_set_dim).normal_(0, 1)
 
-    log_density = torch.empty((ww.shape[0], obs_m))
+    log_density = torch.empty((ww.shape[0] if cond_set_dim else obs_n, obs_m))
     for mm in range(obs_m):
-        cop_samples = cop_flow.sample_copula(num_samples=ww.shape[0], context=ww.to(device))
+        cop_samples = cop_flow.sample_copula(num_samples=ww.shape[0] if cond_set_dim else obs_n, context=ww.to(device) if cond_set_dim else None)
         norm_distr = torch.distributions.normal.Normal(0, 1)
-        log_density[:, mm] = cop_flow.log_pdf_uniform(norm_distr.cdf(cop_samples), norm_distr.cdf(ww).to(device))
+        log_density[:, mm] = cop_flow.log_pdf_uniform(norm_distr.cdf(cop_samples), context=norm_distr.cdf(ww).to(device) if cond_set_dim else None)
     
     mi = torch.mean(log_density)
 
@@ -145,7 +146,8 @@ def hypothesis_test(mutual_information: float, threshold: float = 0.05) -> bool:
 
 
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
-                      cond_set: np.ndarray, exp_name, device, kwargs_m, kwargs_c, epochs_m, epochs_c, num_runs=50, batch_size_m=128, batch_size_c=128, num_workers=0) -> bool:
+                      cond_set: np.ndarray, exp_name, device, kwargs_m, kwargs_c, epochs_m, epochs_c, 
+                      num_runs=50, batch_size_m=128, batch_size_c=128, num_workers=0) -> bool:
     # 
     print('Estimating x marginal...')
     x_uni = marginal_transform(x_input, exp_name, device=device, epochs=epochs_m, batch_size=batch_size_m, num_workers=num_workers, **kwargs_m)
@@ -163,9 +165,10 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
                                                                                                num_workers=0, 
                                                                                                return_datasets=True)
 
-    # @Todo: create data loaders 
     print('Estimating copula..')
-    experiment, __, __ = copula_estimator(loader_train, loader_val, loader_test, cond_set_dim=cond_uni.shape[-1], exp_name=exp_name, device=device, epochs=epochs_c, batch_size=batch_size_c, num_workers=num_workers, **kwargs_c)
+    experiment, __, __ = copula_estimator(loader_train, loader_val, loader_test, cond_set_dim=cond_uni.shape[-1], 
+                                          exp_name=exp_name, device=device, epochs=epochs_c, batch_size=batch_size_c, 
+                                          num_workers=num_workers, **kwargs_c)
     cop_flow = experiment.model
 
     print('Estimating mutual information..')
@@ -175,7 +178,7 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
         ii = 0
         with tqdm.tqdm(total=num_runs) as pbar_test:  # ini a progress bar
             while ii < num_runs:
-                mi_estimate = mi_estimator(cop_flow, device=device)
+                mi_estimate = mi_estimator(cop_flow, device=device, cond_set_dim=cond_uni.shape[-1])
                 if not np.isnan(mi_estimate):
                     mi_runs.append(mi_estimate)
                     ii += 1

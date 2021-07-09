@@ -210,7 +210,7 @@ def set_seeds(seed, use_cuda=True):
 def kde_estimator(data_train, copula_distr, device):
     kde_fit = scipy.stats.gaussian_kde(data_train.T)
     kde_fit = KDE_Decorator(kde_fit, device)
-    return [jsd_copula(kde_fit, copula_distr, device, num_samples=100000)]
+    return [jsd_copula(kde_fit, copula_distr, device, num_samples=100000).item()]
 
 class KDE_Decorator():
     def __init__(self, model, device):
@@ -222,7 +222,6 @@ class KDE_Decorator():
         return torch.log(torch.from_numpy(self.model.pdf(inputs.T.cpu().numpy()))).T.to(self.device)
 
     def log_pdf_uniform(self, inputs, context=None):
-        #inputs = torch.from_numpy(self.norm_distr.ppf(inputs.cpu().numpy()))
         return gaussian_change_of_var_ND(inputs, self.log_pdf_normal, context=context).to(self.device)
 
     def sample_copula(self, num_samples, context=None):

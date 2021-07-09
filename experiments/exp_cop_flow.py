@@ -1,5 +1,5 @@
 # @Todo: write test function that trains and evaluates conditional copula flow for conditional copula inputs
-from cond_indep_test import copula_estimator
+from cond_indep_test import copula_estimator, mi_estimator, hypothesis_test
 from options import TrainOptions
 from utils import create_folders, HiddenPrints, gaussian_change_of_var_ND
 import torch
@@ -16,16 +16,23 @@ from options import TrainOptions
 from eval.plots import visualize_joint
 from eval.metrics import jsd_copula, jsd_copula_context
 import statsmodels.api
+import tqdm
 eps = 1e-10
 
 
 # @Todo: implement comparison (copula? kde?) e.g. statsmodels.nonparametric.kernel_density.KDEMultivariateConditional
 
-def exp_cop_transform(inputs: torch.Tensor, copula_distr, cond_inputs: torch.Tensor =None, cond_set_dim=None, cond_copula_distr=None):
+def exp_cop_transform(inputs: torch.Tensor, copula_distr, cond_inputs: torch.Tensor =None, cond_copula_distr=None):
+    
+    cond_set_dim = cond_inputs.shape[-1] if cond_inputs is not None else None
+
     # Transform into data object
     visualize_joint(inputs, args.figures_path, name='input_dataset')
+    norm_distr = scipy.stats.norm()
+    visualize_joint(norm_distr.cdf(inputs), args.figures_path, name='input_uni_dataset')
     if cond_inputs is not None:
         visualize_joint(cond_inputs, args.figures_path, name='cond_input_dataset')
+        visualize_joint(norm_distr.cdf(cond_inputs), args.figures_path, name='cond_input_uni_dataset')
 
     data_train, __, __, loader_train, loader_val, loader_test = split_data_copula(inputs[:, 0:1], 
                                                                                   inputs[:, 1:2], 
@@ -72,21 +79,41 @@ def exp_cop_transform(inputs: torch.Tensor, copula_distr, cond_inputs: torch.Ten
             jsd = jsd_copula(experiment.model, copula_distr, args.device, num_samples=100000)
         else:
             jsd = jsd_copula_context(experiment.model, copula_distr, args.device, context=cond_inputs, num_samples=cond_inputs.shape[0], cond_copula_distr=cond_copula_distr.pdf)
-
-    print(jsd)
-
-    test_metrics['cop_flow_jsd'] = [jsd]
+            
+    test_metrics['cop_flow_jsd'] = [jsd.item()]
     experiment_logs = os.path.join('results', args.exp_name, 'cf', 'stats')
 
     # # Comparison to empirical CDF Transform:
     test_metrics['kde_jsd'] = kde_estimator(data_train, copula_distr, args.device) # @Todo: write conditional kde estimator
 
     print('Flow JSD: {}, KDE JSD: {}'.format(test_metrics['cop_flow_jsd'][0], test_metrics['kde_jsd'][0]))
+    num_runs = 30
+
+    print('Estimating mutual information..')
+    with torch.no_grad():
+        experiment.model.eval()
+        mi_runs = []
+        ii = 0
+        with tqdm.tqdm(total=num_runs) as pbar_test:  # ini a progress bar
+            while ii < num_runs:
+                mi_estimate = mi_estimator(experiment.model, device=args.device, cond_set_dim=cond_set_dim, obs_n=10000, obs_m=1000)
+                if not np.isnan(mi_estimate):
+                    mi_runs.append(mi_estimate)
+                    ii += 1
+                pbar_test.update(1)
+
+    test_metrics['mi_runs_mean'] = [np.mean(mi_runs)]
+    test_metrics['mi_runs_std'] = [np.std(mi_runs)]
+    print('Running hypothesis test..')
+    result = hypothesis_test(np.array(mi_runs), threshold=0.05)
+    test_metrics['independent'] = [result]
+    print(test_metrics)
     save_statistics(experiment_logs, 'test_summary.csv', test_metrics, current_epoch=0, continue_from_mode=False)
 
 
 def exp_2D_cop(args):
-    experiments = [('clayton_con_2D', 'clayton', 2), 
+    experiments = [('indep_2D', 'independent', 2),
+                   ('clayton_con_2D', 'clayton', 2), 
                    ('clayton_uncon_2D', 'clayton', 0+eps), 
                    ('frank_con_2D', 'frank', 5), 
                    ('frank_uncon_2D', 'frank', 0+eps),
@@ -106,7 +133,9 @@ def exp_2D_cop(args):
         # Get inputs
         copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=True)
         inputs = torch.from_numpy(copula_distr.sample(args.obs)) # @Todo: create conditional inputs
-        
+        normal_distr = torch.distributions.normal.Normal(0, 1)
+        inputs = normal_distr.icdf(inputs).float()
+
         exp_cop_transform(inputs, copula_distr)
 
 
@@ -134,7 +163,7 @@ def exp_4D_cop(args):
         inputs = normal_distr.icdf(inputs).float()
         cond_copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=True)
         # @Todo: debug this
-        exp_cop_transform(inputs[:, 0:2], copula_distr, inputs[:, 2:4], cond_set_dim=inputs[:, 2:4].shape[-1], cond_copula_distr=cond_copula_distr)
+        exp_cop_transform(inputs[:, 0:2], copula_distr, inputs[:, 2:4], cond_copula_distr=cond_copula_distr)
         exit()
 
 if __name__ == '__main__':
@@ -156,8 +185,7 @@ if __name__ == '__main__':
     set_seeds(seed=args.seed, use_cuda=use_cuda)
 
     exp_2D_cop(args)
-    exit()
-    exp_4D_cop(args)
+    #exp_4D_cop(args)
     exit()
     #Get inputs
     copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=True)

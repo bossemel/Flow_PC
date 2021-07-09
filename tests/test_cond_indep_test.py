@@ -105,6 +105,18 @@ class Distr_Wrapper():
         return torch.log(torch.from_numpy(self.distribution.pdf(inputs)))
 
 
+def test_mi_estimator_independent():
+   # Get inputs
+    copula_distr = Copula_Distr('independent', theta=0+eps, transform=False)
+    visualize_joint(copula_distr.sample(1000000), os.path.join('results', 'testing'), name='copula_indep')
+    copula_distr = Distr_Wrapper(copula_distr)
+    use_cuda = True
+    device = torch.device("cuda:0" if use_cuda else "cpu")
+    mi = mi_estimator(copula_distr, device=device, obs_n=100000, obs_m=1000)
+    print('Clayton independent:', mi)
+    assert np.isclose(mi, 0, atol=1e-02)
+
+
 def test_mi_estimator_dependent_clayton():
    # Get inputs
     copula_distr = Copula_Distr('clayton', theta=0+eps, transform=False)
@@ -112,8 +124,8 @@ def test_mi_estimator_dependent_clayton():
     copula_distr = Distr_Wrapper(copula_distr)
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
-    print(mi)
+    mi = mi_estimator(copula_distr, device=device, obs_n=100000, obs_m=1000)
+    print('Clayton independent:', mi)
     assert np.isclose(mi, 0, atol=1e-02)
 
    # Get inputs
@@ -123,8 +135,8 @@ def test_mi_estimator_dependent_clayton():
     
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
-    print(mi)
+    mi = mi_estimator(copula_distr, device=device, obs_n=100000, obs_m=1000)
+    print('Clayton dependent', mi)
     assert not np.isclose(mi, 0, atol=1e-02)
 
 
@@ -137,8 +149,8 @@ def test_mi_estimator_dependent_frank():
 
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
-    print(mi)
+    mi = mi_estimator(copula_distr, device=device, obs_n=100000, obs_m=1000)
+    print('Frank independent', mi)
     assert np.isclose(mi, 0, atol=1e-02)
 
    # Get inputs
@@ -148,8 +160,8 @@ def test_mi_estimator_dependent_frank():
 
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
-    print(mi)
+    mi = mi_estimator(copula_distr, device=device, obs_n=100000, obs_m=1000)
+    print('Frank dependent', mi)
     assert not np.isclose(mi, 0, atol=1e-02)
 
 
@@ -161,8 +173,8 @@ def test_mi_estimator_dependent_gumbel():
 
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
-    print(mi)
+    mi = mi_estimator(copula_distr, device=device, obs_n=100000, obs_m=1000)
+    print('Gumbel independent', mi)
     assert np.isclose(mi, 0, atol=1e-02)
 
    # Get inputs
@@ -172,8 +184,8 @@ def test_mi_estimator_dependent_gumbel():
 
     use_cuda = True
     device = torch.device("cuda:0" if use_cuda else "cpu")
-    mi = mi_estimator(copula_distr, device=device, obs_n=1000, obs_m=1000)
-    print(mi)
+    mi = mi_estimator(copula_distr, device=device, obs_n=100000, obs_m=1000)
+    print('Gumbel dependent', mi)
     assert not np.isclose(mi, 0, atol=1e-02)
 
 # def test_marginal_transform_1d():
@@ -186,6 +198,7 @@ def test_mi_estimator_dependent_gumbel():
 #     raise NotImplementedError
 
 if __name__ == '__main__':
+    test_mi_estimator_independent()
     test_mi_estimator_dependent_clayton()
     test_mi_estimator_dependent_frank()
     test_mi_estimator_dependent_gumbel()
