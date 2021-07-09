@@ -84,11 +84,10 @@ def exp_cop_transform(inputs: torch.Tensor, copula_distr, cond_inputs: torch.Ten
     experiment_logs = os.path.join('results', args.exp_name, 'cf', 'stats')
 
     # # Comparison to empirical CDF Transform:
-    print(copula_distr.theta)
     test_metrics['kde_jsd'] = kde_estimator(data_train, copula_distr, 100000, args.device) # @Todo: write conditional kde estimator
 
     print('Flow JSD: {}, KDE JSD: {}'.format(test_metrics['cop_flow_jsd'][0], test_metrics['kde_jsd'][0]))
-    num_runs = 1
+    num_runs = 30
 
     print('Estimating mutual information..')
     with torch.no_grad():
