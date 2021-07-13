@@ -8,6 +8,7 @@ import os
 import json 
 import random 
 from data_provider import split_data_copula, Copula_Distr
+from tqdm import tqdm
 eps = 1e-10
 # @Todo: write test that trains cond indep test for different inputs and evalute the results 
 # @Todo: write test that evaluted the conditional mutual information function for different given copula functions 
@@ -94,6 +95,47 @@ def test_hypothesis_test_5():
     assert hypothesis_test(mi_1) == False
 
 
+def test_hypothesis_test_mi_indep():
+    mi_list = []
+    for ii in tqdm(range(30)):
+        copula_distr = Copula_Distr('independent', theta=0+eps, transform=False)
+        copula_distr = Distr_Wrapper(copula_distr)
+        use_cuda = True
+        device = torch.device("cuda:0" if use_cuda else "cpu")
+        error = np.random.normal(loc=0, scale=0.00000001, size=1)
+        mi_list.append(mi_estimator(copula_distr, device=device, obs_n=10000, obs_m=1000) + error)
+    print(np.mean(mi_list), np.std(mi_list))
+    assert hypothesis_test(mi_list) == True
+
+
+def test_hypothesis_test_mi_clayton_indep():
+    mi_list = []
+    for ii in tqdm(range(30)):
+        copula_distr = Copula_Distr('clayton', theta=0+eps, transform=False)
+        copula_distr = Distr_Wrapper(copula_distr)
+        use_cuda = True
+        device = torch.device("cuda:0" if use_cuda else "cpu")
+        error = np.random.normal(loc=0, scale=0.00000001, size=1)
+        mi_list.append(mi_estimator(copula_distr, device=device, obs_n=10000, obs_m=1000) + error)
+    print(np.mean(mi_list), np.std(mi_list))
+    assert hypothesis_test(mi_list) == True
+
+
+def test_hypothesis_test_mi_clayton_dep():
+    mi_list = []
+    for ii in tqdm(range(30)):
+        copula_distr = Copula_Distr('clayton', theta=2+eps, transform=False)
+        copula_distr = Distr_Wrapper(copula_distr)
+        use_cuda = True
+        device = torch.device("cuda:0" if use_cuda else "cpu")
+        error = np.random.normal(loc=0, scale=0.00000001, size=1)
+        mi = mi_estimator(copula_distr, device=device, obs_n=10000, obs_m=1000)
+        print(mi)
+        mi_list.append(mi + error)
+    print(np.mean(mi_list), np.std(mi_list))
+    assert hypothesis_test(mi_list) == False
+
+
 class Distr_Wrapper():
     def __init__(self, distribution):
         self.distribution = distribution 
@@ -138,7 +180,6 @@ def test_mi_estimator_dependent_clayton():
     mi = mi_estimator(copula_distr, device=device, obs_n=100000, obs_m=1000)
     print('Clayton dependent', mi)
     assert not np.isclose(mi, 0, atol=1e-02)
-
 
 
 def test_mi_estimator_dependent_frank():
@@ -198,6 +239,10 @@ def test_mi_estimator_dependent_gumbel():
 #     raise NotImplementedError
 
 if __name__ == '__main__':
+    test_hypothesis_test_mi_indep()
+    test_hypothesis_test_mi_clayton_indep()
+    test_hypothesis_test_mi_clayton_dep()
+    exit()
     test_mi_estimator_independent()
     test_mi_estimator_dependent_clayton()
     test_mi_estimator_dependent_frank()
