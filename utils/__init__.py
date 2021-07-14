@@ -6,8 +6,8 @@ import sys
 import numpy as np
 import random
 import scipy
-from eval.metrics import jsd_copula
-
+from eval.metrics import jsd_copula, jsd_copula_context
+import statsmodels.api
 eps = 1e-7
 
 
@@ -16,8 +16,10 @@ def set_optimizer_scheduler(model, lr, weight_decay, amsgrad, epochs):
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
     return optimizer, scheduler
 
+
 def nll_error(log_density):
     return -torch.mean(log_density)
+
 
 def create_folders(args):
     args.exp_path = os.path.join('results', args.exp_name, args.flow_name)
@@ -120,8 +122,8 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
                     'tail_bound': tail_bound,
                     'amsgrad': amsgrad,
                     'clip_grad_norm': clip_grad_norm,
-                    'identity_init': identity_init,
-                    'cond_set_dim': cond_set_dim}
+                    'identity_init': identity_init}
+                    
         if flow_type == 'cop_flow':
             dropout = 0.05 * np.random.choice(range(1, 6))
             use_batch_norm = np.random.choice([True, False])
@@ -174,7 +176,8 @@ def random_search(estimator, flow_name, loader_train, loader_val, loader_test, d
             with HiddenPrints():
                 experiment, experiment_metrics, __ = estimator(loader_train=loader_train, 
                                                                loader_val=loader_val, 
-                                                               loader_test=loader_test, 
+                                                               loader_test=loader_test,
+                                                               cond_set_dim=cond_set_dim,
                                                                exp_name='random_search', 
                                                                device=device, 
                                                                epochs=epochs, 
@@ -212,10 +215,19 @@ def kde_estimator(data_train, copula_distr, num_samples, device):
     kde_fit = KDE_Decorator(kde_fit, device)
     return [jsd_copula(kde_fit, copula_distr, device, num_samples=num_samples).item()]
 
+
+# def cond_kde_estimator(data_train: np.ndarray, data_cond: np.ndarray, copula_distr, num_samples: int, device: str):
+#     print(data_train.shape, data_cond.shape)
+#     print(len(data_train))
+#     kde_fit = statsmodels.api.nonparametric.KDEMultivariateConditional(endog=[data_train.cpu().numpy()], exog=[data_cond.cpu().numpy()], dep_type='c', indep_type='c', bw='normal_reference')
+#     kde_fit = KDE_Decorator(kde_fit, device)
+#     return [jsd_copula_context(kde_fit, copula_distr, device, num_samples=num_samples).item()]
+
 class KDE_Decorator():
     def __init__(self, model, device):
         self.model = model
         self.norm_distr = scipy.stats.norm()
+
         self.device = device
 
     def log_pdf_normal(self, inputs, context=None):

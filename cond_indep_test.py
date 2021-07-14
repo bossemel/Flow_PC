@@ -86,7 +86,8 @@ def marginal_transform(inputs: np.ndarray, exp_name, device, epochs=100, batch_s
     return outputs
 
 
-def copula_estimator(loader_train, loader_val, loader_test, cond_set_dim, exp_name, device, epochs=100, batch_size=128, num_workers=0, disable_tqdm=False, **kwargs):
+def copula_estimator(loader_train, loader_val, loader_test, cond_set_dim, exp_name, device, epochs=100, 
+                     batch_size=128, num_workers=0, disable_tqdm=False, **kwargs):
 
     # Initialize Copula Transform
     cop_flow = cop_flow_constructor(context_dim=cond_set_dim, **kwargs)

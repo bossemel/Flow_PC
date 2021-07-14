@@ -105,6 +105,7 @@ class ExperimentBuilder(nn.Module):
         inputs_batch = inputs_batch.float().to(device=self.device) # send data to device as torch tensors
         if cond_inputs_batch is not None:
             cond_inputs_batch = cond_inputs_batch.float().to(device=self.device)
+        print(inputs_batch.shape, cond_inputs_batch.shape)
         log_density = self.model.log_prob(inputs_batch, cond_inputs_batch)
         loss = -torch.mean(log_density)
         self.optimizer.zero_grad()  # set all weight grads from previous training iters to 0

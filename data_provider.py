@@ -303,7 +303,22 @@ def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers, ret
     return loader_train, loader_val, loader_test
 
 
+class Independent_Copula():
+    def __init__(self,  num_dims=4):
+        self.num_dims = num_dims
+
+    def simulate(self, n):
+        return scipy.stats.uniform.rvs(size=(n, self.num_dims))
+
+    def pdf(self, inputs):
+        return np.ones((inputs.shape[0],))
+
+
 def mutivariate_copula(mix, copula, marginal, theta, num_samples=10000, disable_marginal=False):
+    if copula == 'independent':
+        copula = Independent_Copula()
+        copula = VineCop_Decorator(copula)
+        return torch.from_numpy(copula.sample(num_samples)), copula
     if mix is False:
         if copula == 'clayton':
             pair_copula = pv.BicopFamily.clayton
