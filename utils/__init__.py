@@ -44,23 +44,6 @@ class HiddenPrints:
         sys.stdout.close()
         sys.stdout = self._original_stdout
 
-# class Fixed_sampler(flows.Flow):
-#     def __init__(self, dependent=False):
-#         super().__init__(transform=None, distribution=None)
-#         self.dependent = dependent 
-
-#     def sample(self, num_samples, context=None):
-#         if not self.dependent:
-#             return torch.from_numpy(scipy.stats.norm.rvs(size=(num_samples, 2)))
-
-#     def log_prob(self, inputs, context=None):
-#         if not self.dependent:
-#             mult_norm = scipy.stats.multivariate_normal(mean=[0,0], cov=[[1,0],[0,1]])
-#             return torch.log(torch.from_numpy(mult_norm.pdf(inputs)))
-
-#     #def _distribution(self):
-
-
 
 def gaussian_change_of_var_ND(inputs: torch.Tensor, original_log_pdf, context=None):
     inputs[inputs == 0] = eps

@@ -10,7 +10,7 @@ import matplotlib
 matplotlib.rcParams.update({'font.size': 8})
 
 from utils.load_and_save import save_statistics, load_statistics
-from utils.plotting import plot_result_graphs
+from eval.plots import plot_result_graphs
 
 
 class ExperimentBuilder(nn.Module):
@@ -54,6 +54,7 @@ class ExperimentBuilder(nn.Module):
             total_num_parameters += np.prod(value.shape)
 
         print('Total number of parameters', total_num_parameters)
+
 
         self.optimizer = optimizer
         self.learning_rate_scheduler = scheduler
@@ -105,7 +106,6 @@ class ExperimentBuilder(nn.Module):
         inputs_batch = inputs_batch.float().to(device=self.device) # send data to device as torch tensors
         if cond_inputs_batch is not None:
             cond_inputs_batch = cond_inputs_batch.float().to(device=self.device)
-        print(inputs_batch.shape, cond_inputs_batch.shape)
         log_density = self.model.log_prob(inputs_batch, cond_inputs_batch)
         loss = -torch.mean(log_density)
         self.optimizer.zero_grad()  # set all weight grads from previous training iters to 0

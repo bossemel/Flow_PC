@@ -1,9 +1,10 @@
 import torch 
 import warnings
+from data_provider import Copula_Distr
 eps = 1e-10
 
 
-def jsd_copula_context(pred_dist, true_dist, device, context, num_samples, cond_copula_distr):
+def jsd_copula_context(pred_dist, true_dist, device: str, context: torch.Tensor, num_samples: int, cond_copula_distr: Copula_Distr) -> float:
     """Returns JS-Divergence of the predicted distribution and the true distribution
     """
     # Get ground truth
@@ -36,7 +37,7 @@ def jsd_copula_context(pred_dist, true_dist, device, context, num_samples, cond_
     return divergence
 
 
-def jsd_copula(pred_dist, true_dist, device, num_samples=100000):
+def jsd_copula(pred_dist, true_dist, device: str, num_samples: int =100000):
     """Returns JS-Divergence of the predicted distribution and the true distribution
     """
     # Get ground truth
@@ -69,8 +70,8 @@ def jsd_copula(pred_dist, true_dist, device, num_samples=100000):
     return divergence
 
 
-def js_divergence(prob_x_in_p, prob_x_in_q,
-                  prob_y_in_p, prob_y_in_q):
+def js_divergence(prob_x_in_p: torch.Tensor, prob_x_in_q: torch.Tensor,
+                  prob_y_in_p: torch.Tensor, prob_y_in_q: torch.Tensor) -> float:
     """Calculate JS-Divergence using Monte Carlo.
     Params:
         prob_x_in_p: p(x), x from distr p(x), array

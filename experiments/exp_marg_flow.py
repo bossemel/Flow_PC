@@ -1,4 +1,3 @@
-# @Todo: write test function that trains and evaluates conditional copula flow for conditional copula inputs
 from cond_indep_test import marginal_estimator
 from options import TrainOptions
 from utils import create_folders, HiddenPrints
@@ -17,7 +16,7 @@ import matplotlib.pyplot as plt
 eps = 1e-10
 
 
-def kde_nll(data_train, data_test):
+def kde_nll(data_train: np.ndarray, data_test: np.ndarray) -> np.ndarray:
     norm_distr = scipy.stats.norm()
     kde = scipy.stats.gaussian_kde(data_train.reshape(-1,))
     cdf = np.vectorize(lambda x: kde.integrate_box_1d(-np.inf, x))
@@ -27,31 +26,31 @@ def kde_nll(data_train, data_test):
     gaussian_samples = norm_distr.ppf(uniform_samples)
     return -np.mean(norm_distr.logpdf(gaussian_samples))
 
-def exp_marg_transform(inputs):
+def exp_marg_transform(inputs: np.ndarray) -> None:
     # Transform into data object
     data_train, __, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
-                                                                                                 batch_size=args.batch_size_m, 
-                                                                                                 num_workers=0, 
-                                                                                                 return_datasets=True)
+                                                                                           batch_size=args.batch_size_m, 
+                                                                                           num_workers=0, 
+                                                                                           return_datasets=True)
 
     # Run experiment 
     experiment, __, test_metrics = marginal_estimator(loader_train=loader_train, 
-                                                                      loader_val=loader_val, 
-                                                                      loader_test=loader_test, 
-                                                                      exp_name=args.exp_name, 
-                                                                      device=args.device, 
-                                                                      amsgrad=args.amsgrad_m, 
-                                                                      epochs=args.epochs_m, 
-                                                                      num_workers=args.num_workers, 
-                                                                      variable_num=0,
-                                                                      n_layers=args.n_layers_m,
-                                                                      hidden_units=args.hidden_units_m,
-                                                                      n_bins=args.n_bins_m,
-                                                                      tail_bound=args.tail_bound_m,
-                                                                      identity_init=args.identity_init_m,
-                                                                      tails=args.tails_m,
-                                                                      lr=args.lr_m,
-                                                                      weight_decay=args.weight_decay_m)  # @Todo: make sure these are all actually used
+                                                      loader_val=loader_val, 
+                                                      loader_test=loader_test, 
+                                                      exp_name=args.exp_name, 
+                                                      device=args.device, 
+                                                      amsgrad=args.amsgrad_m, 
+                                                      epochs=args.epochs_m, 
+                                                      num_workers=args.num_workers, 
+                                                      variable_num=0,
+                                                      n_layers=args.n_layers_m,
+                                                      hidden_units=args.hidden_units_m,
+                                                      n_bins=args.n_bins_m,
+                                                      tail_bound=args.tail_bound_m,
+                                                      identity_init=args.identity_init_m,
+                                                      tails=args.tails_m,
+                                                      lr=args.lr_m,
+                                                      weight_decay=args.weight_decay_m)  # @Todo: make sure these are all actually used
 
     # Plot results
     visualize1d(experiment.model, device=args.device, path=experiment.figures_path, true_samples=data_train, obs=1000, name='marg_flow')
