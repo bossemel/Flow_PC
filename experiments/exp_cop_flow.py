@@ -41,15 +41,7 @@ def cop_eval(model: Basic_Flow, inputs: torch.Tensor, cond_inputs: torch.Tensor,
     # Calculate JSD
     if cond_set_dim is None:
         jsd = jsd_copula(model, copula_distr, args.device, num_samples=100000)
-    else:
-        jsd = jsd_copula_context(model, 
-                                 copula_distr, 
-                                 args.device, 
-                                 context=cond_inputs_uni, 
-                                 num_samples=cond_inputs.shape[0], 
-                                 cond_copula_distr=cond_copula_distr)
-        
-    eval_metrics['cop_flow_jsd'] = [jsd.item()]
+        eval_metrics['cop_flow_jsd'] = [jsd.item()]
 
     # # Comparison to empirical CDF Transform:
     if cond_set_dim is None:
