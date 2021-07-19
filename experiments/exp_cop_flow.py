@@ -12,7 +12,7 @@ from utils import create_folders, random_search, set_seeds, kde_estimator
 from data_provider import split_data_copula, Copula_Distr, mutivariate_copula
 from options import TrainOptions
 from eval.plots import visualize_joint
-from eval.metrics import jsd_copula, jsd_copula_context
+from eval.metrics import jsd_copula
 eps = 1e-10
 
 
@@ -28,11 +28,6 @@ def visualize_inputs(inputs: np.ndarray, cond_inputs: np.ndarray) -> None:
 def cop_eval(model: Basic_Flow, inputs: torch.Tensor, cond_inputs: torch.Tensor, copula_distr: Copula_Distr, cond_copula_distr: Copula_Distr, 
              cond_set_dim: int, data_train: torch.Tensor, figures_path: str, experiment_logs: str) -> dict:
     eval_metrics = {}
-
-    # Transform conditional inputs
-    if cond_inputs is not None: # @Todo: why am i doing this? 
-        normal_distr = torch.distributions.normal.Normal(0, 1)
-        cond_inputs_uni = normal_distr.cdf(cond_inputs).float().to(args.device)
 
     # Plot copula samples
     samples = model.sample_copula(inputs.shape[0], context=cond_inputs).cpu().numpy()
