@@ -50,7 +50,6 @@ class ExperimentBuilder(nn.Module):
         #print('System learnable parameters')
         total_num_parameters = 0
         for name, value in self.named_parameters():
-            #print(name, value.shape) # @Todo: possibly look at this again
             total_num_parameters += np.prod(value.shape)
 
         print('Total number of parameters', total_num_parameters)

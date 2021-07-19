@@ -68,22 +68,18 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name: str, device: str, epochs
     return outputs
 
 
-def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, epochs: int =100, 
-                       batch_size: int =128, num_workers: int =0, **kwargs) -> np.ndarray:
+def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, **kwargs) -> np.ndarray:
     if inputs.shape[1] > 1:
         outputs = torch.empty_like(torch.from_numpy(inputs)).to(device).detach()
         for dim in range(inputs.shape[1]):
             outputs[:, dim: dim + 1] = marginal_transform_1d(inputs=inputs[:, dim: dim+1],
                                                              exp_name=exp_name,
                                                              device=device,
-                                                             epochs=epochs,
-                                                             batch_size=batch_size,
                                                              variable_num=dim,
-                                                             num_workers=num_workers,
                                                              **kwargs).reshape(-1, 1).detach()
     elif inputs.shape[1] == 1:
         outputs = marginal_transform_1d(inputs=inputs,  exp_name=exp_name,
-                                        device=device, epochs=epochs, batch_size=batch_size, **kwargs).reshape(-1, 1).detach()
+                                        device=device, **kwargs).reshape(-1, 1).detach()
     else:
         raise ValueError('Invalid input shape.')
     return outputs
@@ -121,32 +117,36 @@ def copula_estimator(loader_train: torch.utils.data.DataLoader, loader_val: torc
     return experiment, experiment_metrics, test_metrics
 
 
-def mi_estimator(cop_flow: Basic_Flow, device: str, obs_n: int =1000, obs_m: int =1000, cond_set_dim: int =False) -> float:
-    if cond_set_dim:
-        ww = torch.FloatTensor(obs_m, cond_set_dim).normal_(0, 1)
-
-    log_density = torch.empty((ww.shape[0] if cond_set_dim else obs_n, obs_m))
+def mi_estimator(cop_flow: Basic_Flow, device: str, obs_n: int =1000, obs_m: int =1000, cond_set: int =False) -> float:
+    log_density = torch.empty((cond_set.shape[0] if cond_set else obs_n, obs_m))
     for mm in range(obs_m):
-        cop_samples = cop_flow.sample_copula(num_samples=ww.shape[0] if cond_set_dim else obs_n, context=ww.to(device) if cond_set_dim else None)
+        cop_samples = cop_flow.sample_copula(num_samples=cond_set.shape[0] if cond_set else obs_n, context=cond_set.to(device) if cond_set else None)
         norm_distr = torch.distributions.normal.Normal(0, 1)
-        log_density[:, mm] = cop_flow.log_pdf_uniform(norm_distr.cdf(cop_samples), context=norm_distr.cdf(ww).to(device) if cond_set_dim else None)
+        log_density[:, mm] = cop_flow.log_pdf_uniform(norm_distr.cdf(cop_samples), context=norm_distr.cdf(cond_set).to(device) if cond_set else None)
     
     mi = torch.mean(log_density)
     return mi.cpu().numpy()
 
 
-def hypothesis_test(mutual_information: float, threshold: float = 0.05) -> bool:
-    statistic, pvalue = scipy.stats.ttest_1samp(mutual_information, 0, axis=0, nan_policy='raise')
-    print('Test statistic: {}, P-Value: {}'.format(statistic, pvalue))
-    print('Threshold: ', threshold)
-    if pvalue > threshold:
-        print('MI not significantly different from zero. Sample conditionally independent')
+def independence_test(mi: float, threshold: float =0.05):
+    if mi < threshold:
         return True
-    elif pvalue <= threshold:
-        print('MI significantly different from zero. Samples not conditionally independent.')
+    else:  
         return False
-    else:
-        print('Invalid test result.')
+        
+
+# def hypothesis_test(mutual_information: float, threshold: float = 0.05) -> bool:
+#     statistic, pvalue = scipy.stats.ttest_1samp(mutual_information, 0, axis=0, nan_policy='raise')
+#     print('Test statistic: {}, P-Value: {}'.format(statistic, pvalue))
+#     print('Threshold: ', threshold)
+#     if pvalue > threshold:
+#         print('MI not significantly different from zero. Sample conditionally independent')
+#         return True
+#     elif pvalue <= threshold:
+#         print('MI significantly different from zero. Samples not conditionally independent.')
+#         return False
+#     else:
+#         print('Invalid test result.')
 
 
 def mi_loop(cop_flow: Basic_Flow, cond_set_dim: int, num_runs: int, device: str) -> list:
@@ -163,24 +163,24 @@ def mi_loop(cop_flow: Basic_Flow, cond_set_dim: int, num_runs: int, device: str)
 
 
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
-                      cond_set: np.ndarray, exp_name: str, device: str, kwargs_m, kwargs_c, epochs_m: int, epochs_c: int, 
+                      cond_set: np.ndarray, exp_name: str, device: str, kwargs_m, kwargs_c, epochs_c: int, 
                       num_runs: int=30, batch_size_m: int =128, batch_size_c: int =128, num_workers: int =0) -> bool:
     
     print('Estimating x marginal...')
-    x_uni = marginal_transform(x_input, exp_name, device=device, epochs=epochs_m, batch_size=batch_size_m, num_workers=num_workers, **kwargs_m)
+    x_uni = marginal_transform(x_input, exp_name, device=device, **kwargs_m)
     print('Estimating y marginal...')
-    y_uni = marginal_transform(y_input, exp_name, device=device, epochs=epochs_m, batch_size=batch_size_m, num_workers=num_workers, **kwargs_m)
+    y_uni = marginal_transform(y_input, exp_name, device=device, **kwargs_m)
     print('Estimating cond set marginals...')
-    cond_uni = marginal_transform(cond_set, exp_name, device=device, epochs=epochs_m, batch_size=batch_size_m, num_workers=num_workers, **kwargs_m)
+    cond_uni = marginal_transform(cond_set, exp_name, device=device, **kwargs_m)
 
     # Transform into data object
     print('Creating copula dataset..')
-    data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_copula(x_uni, 
-                                                                                               y_uni,
-                                                                                               cond_uni, 
-                                                                                               batch_size=128, 
-                                                                                               num_workers=0, 
-                                                                                               return_datasets=True)
+    __, __, __, loader_train, loader_val, loader_test = split_data_copula(x_uni, 
+                                                                          y_uni,
+                                                                          cond_uni, 
+                                                                          batch_size=128, 
+                                                                          num_workers=0, 
+                                                                          return_datasets=True)
 
     print('Estimating copula..')
     experiment, __, __ = copula_estimator(loader_train, loader_val, loader_test, cond_set_dim=cond_uni.shape[-1], 
@@ -194,7 +194,7 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
         mi_runs = mi_loop(cop_flow, cond_uni.shape[-1], num_runs, device)
 
     print('Running hypothesis test..')
-    result = hypothesis_test(np.array(mi_runs), threshold=0.05)
+    result = independence_test(np.array(mi_runs), threshold=0.05)
     return result
 
 

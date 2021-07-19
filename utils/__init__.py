@@ -6,8 +6,7 @@ import sys
 import numpy as np
 import random
 import scipy
-from eval.metrics import jsd_copula, jsd_copula_context
-import statsmodels.api
+from eval.metrics import jsd_copula
 eps = 1e-7
 
 

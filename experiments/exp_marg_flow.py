@@ -50,7 +50,7 @@ def exp_marg_transform(inputs: np.ndarray) -> None:
                                                       identity_init=args.identity_init_m,
                                                       tails=args.tails_m,
                                                       lr=args.lr_m,
-                                                      weight_decay=args.weight_decay_m)  # @Todo: make sure these are all actually used
+                                                      weight_decay=args.weight_decay_m)
 
     # Plot results
     visualize1d(experiment.model, device=args.device, path=experiment.figures_path, true_samples=data_train, obs=1000, name='marg_flow')
