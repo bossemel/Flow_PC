@@ -68,14 +68,17 @@ def gaussian_change_of_var_ND(inputs: torch.Tensor, original_log_pdf, context=No
     if context is not None:
         recast_inputs = torch.cat([recast_inputs, recast_context], axis=1)
     second_dim = recast_inputs.shape[1] if len(recast_inputs.shape) == 2 else 1
-
+    
     if second_dim >= 2:
-        determinant = normal_distr.log_prob(recast_inputs).sum(axis=1) # torch.exp(normal_distr.log_prob(recast_inputs).sum(axis=1))
+        determinant = normal_distr.log_prob(recast_inputs).sum(axis=1)
     else:
-        determinant = normal_distr.log_prob(recast_inputs) # torch.exp(normal_distr.log_prob(recast_inputs))
+        determinant = normal_distr.log_prob(recast_inputs)
 
     output = original_joint - determinant
-    #(output) >= 0, '{}'.format(torch.min(output))
+    # assert torch.min(output) >= 0, '{}, {}, {}, {}'.format(torch.min(output), 
+    #                                                        torch.sum(original_joint), 
+    #                                                        torch.sum(determinant), 
+    #                                                        second_dim)
     return output
 
 

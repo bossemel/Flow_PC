@@ -11,6 +11,7 @@ import json
 import random
 import scipy.stats
 import tqdm 
+from eval.plots import visualize_joint
 eps = 1e-10
 
 
@@ -117,12 +118,19 @@ def copula_estimator(loader_train: torch.utils.data.DataLoader, loader_val: torc
     return experiment, experiment_metrics, test_metrics
 
 
-def mi_estimator(cop_flow: Basic_Flow, device: str, obs_n: int =1000, obs_m: int =1000, cond_set: int =False) -> float:
-    log_density = torch.empty((cond_set.shape[0] if cond_set else obs_n, obs_m))
+def mi_estimator(cop_flow: Basic_Flow, device: str, obs_n: int =1000, obs_m: int =1000, cond_set: int =None) -> float:
+    log_density = torch.empty((cond_set.shape[0] if cond_set is not None else obs_n, obs_m))
+    norm_distr = torch.distributions.normal.Normal(0, 1)
+
     for mm in range(obs_m):
-        cop_samples = cop_flow.sample_copula(num_samples=cond_set.shape[0] if cond_set else obs_n, context=cond_set.to(device) if cond_set else None)
-        norm_distr = torch.distributions.normal.Normal(0, 1)
-        log_density[:, mm] = cop_flow.log_pdf_uniform(norm_distr.cdf(cop_samples), context=norm_distr.cdf(cond_set).to(device) if cond_set else None)
+        cop_samples = cop_flow.sample_copula(num_samples=cond_set.shape[0] if cond_set is not None else obs_n, 
+                                             context=cond_set.to(device) if cond_set is not None else None)
+        #@Todo: visualize cond set and inputs here
+        #visualize_joint(cop_samples.cpu().numpy(), os.path.join('results', 'testing'), 'mi_cop_samples')
+        #visualize_joint(cond_set.cpu().numpy(), os.path.join('results', 'testing'), 'mi_cond_set_norm')
+        #visualize_joint(norm_distr.cdf(cond_set).cpu().numpy(), os.path.join('results', 'testing'), 'mi_cond_set_uni')
+        log_density[:, mm] = cop_flow.log_pdf_uniform(cop_samples, 
+                                                      context=norm_distr.cdf(cond_set).to(device) if cond_set is not None else None)
     
     mi = torch.mean(log_density)
     return mi.cpu().numpy()

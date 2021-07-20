@@ -5,8 +5,7 @@ import torch
 import numpy as np
 import json
 import os 
-
-eps = 1e-10
+eps = 1e-7
 
 
 def test_marginal_estimator():
