@@ -3,7 +3,8 @@ import os
 import csv
 
 
-def save_statistics(experiment_log_dir, filename, stats_dict, current_epoch, continue_from_mode=False, save_full_dict=False):
+def save_statistics(experiment_log_dir: str, filename: str, stats_dict: dict, 
+                    current_epoch: int, continue_from_mode: bool =False, save_full_dict: bool=False):
     """
     Saves the statistics in stats dict into a csv file. Using the keys as the header entries and the values as the
     columns of a particular header entry

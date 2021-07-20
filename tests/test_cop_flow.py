@@ -1,4 +1,3 @@
-# @Todo: write test function that trains and evaluates conditional copula flow for conditional copula inputs
 from cond_indep_test import copula_estimator
 from options import TrainOptions
 from utils import create_folders, set_seeds

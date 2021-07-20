@@ -361,7 +361,7 @@ class VineCop_Decorator():
         return self.vinecop.simulate(n=num_samples)
 
     def pdf(self, inputs, cond_copula_pdf):
-        return self.vinecop.pdf(inputs) / cond_copula_pdf(inputs[:, 2:4])
+        return self.vinecop.pdf(inputs) / cond_copula_pdf.pdf(inputs[:, 2:4])
 
 
 if __name__ == '__main__':

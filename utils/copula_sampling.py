@@ -1,9 +1,10 @@
+from typing import Tuple
 import numpy as np
 import sys
 eps = 1e-7
 
 
-def sample_clayton(obs_, theta_, uu=None, ww=None, random_seed=None):
+def sample_clayton(obs_: int, theta_: float, uu: np.ndarray =None, ww: np.ndarray =None, random_seed: int=None) -> tuple:
     """Sample from clayton copula density
 
     Params:
@@ -34,7 +35,7 @@ def sample_clayton(obs_, theta_, uu=None, ww=None, random_seed=None):
     return uu, vv
 
 
-def sample_frank(obs_, theta_, uu=None, ww=None, random_seed=None):
+def sample_frank(obs_: int, theta_: float, uu: np.ndarray =None, ww: np.ndarray =None, random_seed: int=None) -> tuple:
     """Sample from frank copula density
 
     Params:
@@ -66,7 +67,7 @@ def sample_frank(obs_, theta_, uu=None, ww=None, random_seed=None):
     return uu, vv
 
 
-def sample_gumbel(obs_, theta_, random_seed=None):
+def sample_gumbel(obs_: int, theta_: float, random_seed: int =None) -> tuple:
     """Sample from gumbel copula density
 
     Params:
@@ -127,7 +128,7 @@ def _g(theta_, z):
     return np.exp(np.multiply(-theta_, z)) - 1
 
 
-def gumbel_cdf(theta_, uu, vv):
+def gumbel_cdf(theta_: float, uu: np.ndarray, vv: np.ndarray) -> np.ndarray:
     if theta_ == 1:
         return np.multiply(uu, vv)
 
@@ -138,7 +139,7 @@ def gumbel_cdf(theta_, uu, vv):
         return cdfs
 
 
-def copula_pdf(copula, theta_, uu, vv):
+def copula_pdf(copula: str, theta_: float, uu: np.ndarray, vv: np.ndarray) -> np.ndarray:
     uu = remove_0_1(uu).numpy().astype('float64')
     vv = remove_0_1(vv).numpy().astype('float64')
     assert np.min(uu) > 0 and np.max(uu) < 1, 'min: {}, max: {}'.format(np.min(uu), np.max(uu))

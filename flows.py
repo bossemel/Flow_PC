@@ -52,24 +52,6 @@ def cop_flow_constructor(n_layers, context_dim, hidden_units, tail_bound , n_blo
 def marg_flow_constructor(n_layers, n_bins, tail_bound, identity_init, hidden_units, tails,
                           dropout=0.01, use_batch_norm=True, **kwargs):
     def create_transform():
-        # return transforms.CompositeTransform([
-        #     transforms.MaskedAffineAutoregressiveTransform(features=1, hidden_features=0),
-        #     transforms.RandomPermutation(features=1)
-        # ])
-        # return transforms.PiecewiseRationalQuadraticCouplingTransform(
-        #     mask=utils.create_alternating_binary_mask(features=self.dim, even=(ii % 2 == 0)),
-        #     transform_net_create_fn=lambda in_features, out_features: nn_.ResidualNet(
-        #         in_features=in_features,
-        #         out_features=out_features,
-        #         hidden_features=self.hidden_units_c,
-        #         num_blocks=self.n_blocks_c,
-        #         dropout_probability=self.dropout_c,
-        #         use_batch_norm=self.use_batch_norm_c
-        #     ),
-        #     tails=self.tails,
-        #     tail_bound=self.tail_bound_c,
-        #     num_bins=self.n_bins_c,
-        #     apply_unconditional_transform=self.unconditional_transform
         return transforms.PiecewiseRationalQuadraticCDF(
             shape=[1],
             num_bins=n_bins,

@@ -6,8 +6,7 @@ import sys
 import numpy as np
 import random
 import scipy
-from eval.metrics import jsd_copula, jsd_copula_context
-import statsmodels.api
+from eval.metrics import jsd_copula
 eps = 1e-7
 
 
@@ -44,23 +43,6 @@ class HiddenPrints:
         sys.stdout.close()
         sys.stdout = self._original_stdout
 
-# class Fixed_sampler(flows.Flow):
-#     def __init__(self, dependent=False):
-#         super().__init__(transform=None, distribution=None)
-#         self.dependent = dependent 
-
-#     def sample(self, num_samples, context=None):
-#         if not self.dependent:
-#             return torch.from_numpy(scipy.stats.norm.rvs(size=(num_samples, 2)))
-
-#     def log_prob(self, inputs, context=None):
-#         if not self.dependent:
-#             mult_norm = scipy.stats.multivariate_normal(mean=[0,0], cov=[[1,0],[0,1]])
-#             return torch.log(torch.from_numpy(mult_norm.pdf(inputs)))
-
-#     #def _distribution(self):
-
-
 
 def gaussian_change_of_var_ND(inputs: torch.Tensor, original_log_pdf, context=None):
     inputs[inputs == 0] = eps
@@ -86,14 +68,17 @@ def gaussian_change_of_var_ND(inputs: torch.Tensor, original_log_pdf, context=No
     if context is not None:
         recast_inputs = torch.cat([recast_inputs, recast_context], axis=1)
     second_dim = recast_inputs.shape[1] if len(recast_inputs.shape) == 2 else 1
-
+    
     if second_dim >= 2:
-        determinant = normal_distr.log_prob(recast_inputs).sum(axis=1) # torch.exp(normal_distr.log_prob(recast_inputs).sum(axis=1))
+        determinant = normal_distr.log_prob(recast_inputs).sum(axis=1)
     else:
-        determinant = normal_distr.log_prob(recast_inputs) # torch.exp(normal_distr.log_prob(recast_inputs))
+        determinant = normal_distr.log_prob(recast_inputs)
 
     output = original_joint - determinant
-    #(output) >= 0, '{}'.format(torch.min(output))
+    # assert torch.min(output) >= 0, '{}, {}, {}, {}'.format(torch.min(output), 
+    #                                                        torch.sum(original_joint), 
+    #                                                        torch.sum(determinant), 
+    #                                                        second_dim)
     return output
 
 
