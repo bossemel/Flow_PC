@@ -254,7 +254,7 @@ if __name__ == '__main__':
     normal_distr = torch.distributions.normal.Normal(0, 1)
     inputs = normal_distr.icdf(inputs).float()
     start_time = time.time()
-    exp_cop_transform(inputs, copula_distr)
+    exp_cop(inputs, copula_distr)
     print("--- %s seconds ---" % (time.time() - start_time))
     #exit()
 

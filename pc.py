@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     print(s_data.shape)
 
-    pc = pcalg(dataset=s_data.to_numpy()) #, feature_names=features)
+    pc = pcalg(dataset=s_data.to_numpy()[:, :10]) #, feature_names=features)
     pc.identify_skeleton_original(indep_test=resit)
     # pc_fit = PC(data=s_data_sample)
     # estimated_graph = pc_fit.build_skeleton(variant='parallel')
