@@ -11,7 +11,7 @@ from utils import create_folders, random_search, set_seeds
 from data_provider import split_data_marginal, Marginal_Distr
 from options import TrainOptions
 from eval.plots import visualize1d
-eps = 1e-10
+eps = 1e-7
 
 
 def kde_nll(data_train: np.ndarray, data_test: np.ndarray) -> np.ndarray:
