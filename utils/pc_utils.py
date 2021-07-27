@@ -55,13 +55,16 @@ class pcalg():
     """
     
     
-    def __init__(self, dataset, feature_names=None):
+    def __init__(self, dataset, device, feature_names=None, kwargs_m=None, kwargs_c=None):
         self.dataset = check_dataset(dataset)
         self.dataset = dataset
         self.features = get_features(dataset,
                                      feature_names)
         self.G = nx.Graph()
+        self.kwargs_m = kwargs_m
+        self.kwargs_c = kwargs_c
 
+        self.device = device
         
     def _instantiate_fully_connected_graph(self):
         self.G.add_nodes_from(self.features.keys())
@@ -98,12 +101,14 @@ class pcalg():
                 x_neighbors.remove(y)
                 if len(x_neighbors) >= level:
                     cont = True
-                    for z in combinations(x_neighbors, level):                        
+                    for z in combinations(x_neighbors, level):
                         pvalue = indep_test(self.dataset[:,x],
                                             self.dataset[:,y],
-                                            self.dataset[:,z].reshape(self.dataset.shape[0], len(z)),
-                                            LinearRegression()
-                                           )
+                                            self.dataset[:,z] if len(z) > 1 else None,
+                                            kwargs_m=self.kwargs_m,
+                                            kwargs_c=self.kwargs_c,
+                                            exp_name='pc',
+                                            device=self.device) # @Todo: add exp_name and device
                         print("""Independence test between {} and {} conditioned on {}: {}""".format(
                            self.features[x],self.features[y],[self.features[f] for f in z], pvalue))
                         print("Test Number: {}".format(counter))
@@ -147,7 +152,10 @@ class pcalg():
                     continue
                 if not self.stable:
                     pvalue = indep_test(self.dataset[x],
-                                        self.dataset[y], self.dataset[z])
+                                        self.dataset[y], 
+                                        self.dataset[z],
+                                        self.kwargs_m,
+                                        self.kwargs_c)
                     if pvalue <= alpha:
                         # x and y are conditionnaly dependent
                         # so z is a collider.
@@ -182,7 +190,7 @@ class pcalg():
         return
 
 
-def resit(X, Y, Z, sklearn_model):
+def resit(X, Y, Z, kwargs_m, kwargs_c, exp_name, device):
     """
     Independently model X and Y as a
     function of Z using models that follow
@@ -196,13 +204,18 @@ def resit(X, Y, Z, sklearn_model):
 
     http://jmlr.org/papers/volume15/peters14a/peters14a.pdf
     """
-    
-    if Z.shape[1] == 0:
+    sklearn_model = LinearRegression()
+    if Z is not None:
+        Z = Z.reshape(Z.shape[0], Z.shape[1])
+        Z_shape = Z.shape[1]
+    else:
+        Z_shape = 0
+    if Z_shape == 0:
         # unconditional independence test
         return mutual_info_regression(X.reshape(-1, 1), Y)
         
     else:
-        poly = PolynomialFeatures(Z.shape[1])
+        poly = PolynomialFeatures(Z_shape)
         Z = poly.fit_transform(Z)
         model_X = sklearn_model
         model_X.fit(Z, X)

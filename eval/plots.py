@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import torch
 import os
 import seaborn as sns
+import networkx as nx
+import pydot
+from networkx.drawing.nx_pydot import graphviz_layout
 
 
 def visualize1d(model, true_samples: np.ndarray, device: str, path: str, obs: int =1000, name: str ='') -> None:
@@ -90,3 +93,15 @@ def visualize_joint(data: np.ndarray, figures_path: str, name: str, axis_1_name:
     fig = sns.jointplot(x=data[:, 0], y=data[:, 1], kind='hex')
     fig.set_axis_labels(axis_1_name, axis_2_name, fontsize=16)
     fig.savefig(os.path.join(figures_path, name + '.pdf'), dpi=300, bbox_inches='tight')
+
+
+def plot_graph(graph, path):
+    """
+    Plot the graph G with nodes and edges at positions pos.
+    """
+    plt.figure(figsize=(8,8))
+    pos = graphviz_layout(graph, prog="circo")
+    nx.draw(graph, pos, with_labels=True, node_size=3000, font_size=20, 
+            alpha=0.9, width=2)
+    plt.savefig(path, format='pdf', dpi=300)
+    plt.close()

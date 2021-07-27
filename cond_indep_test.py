@@ -12,7 +12,7 @@ import random
 import scipy.stats
 import tqdm 
 from eval.plots import visualize_joint
-eps = 1e-10
+eps = 1e-7
 
 
 def marginal_estimator(loader_train: torch.utils.data.DataLoader, loader_val: torch.utils.data.DataLoader, 
@@ -70,7 +70,7 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name: str, device: str, epochs
 
 
 def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, **kwargs) -> np.ndarray:
-    if inputs.shape[1] > 1:
+    if inputs.ndim > 1:
         outputs = torch.empty_like(torch.from_numpy(inputs)).to(device).detach()
         for dim in range(inputs.shape[1]):
             outputs[:, dim: dim + 1] = marginal_transform_1d(inputs=inputs[:, dim: dim+1],
@@ -78,8 +78,8 @@ def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, **kwargs)
                                                              device=device,
                                                              variable_num=dim,
                                                              **kwargs).reshape(-1, 1).detach()
-    elif inputs.shape[1] == 1:
-        outputs = marginal_transform_1d(inputs=inputs,  exp_name=exp_name,
+    elif inputs.ndim == 1:
+        outputs = marginal_transform_1d(inputs=inputs.reshape(-1,1),  exp_name=exp_name,
                                         device=device, **kwargs).reshape(-1, 1).detach()
     else:
         raise ValueError('Invalid input shape.')
@@ -157,52 +157,60 @@ def independence_test(mi: float, threshold: float =0.05):
 #         print('Invalid test result.')
 
 
-def mi_loop(cop_flow: Basic_Flow, cond_set_dim: int, num_runs: int, device: str) -> list:
-    mi_runs = []
-    ii = 0
-    with tqdm.tqdm(total=num_runs) as pbar_test:  # ini a progress bar
-        while ii < num_runs:
-            mi_estimate = mi_estimator(cop_flow, device=device, cond_set_dim=cond_set_dim)
-            if not np.isnan(mi_estimate):
-                mi_runs.append(mi_estimate)
-                ii += 1
-            pbar_test.update(1)
-    return mi_runs
+# def mi_loop(cop_flow: Basic_Flow, cond_set, num_runs: int, device: str) -> list: # @Todo: why only cond set dim here and not cond set?
+#     mi_runs = []
+#     ii = 0
+#     with tqdm.tqdm(total=num_runs) as pbar_test:  # ini a progress bar
+#         while ii < num_runs:
+#             mi_estimate = mi_estimator(cop_flow, device=device, cond_set=cond_set)
+#             if not np.isnan(mi_estimate):
+#                 mi_runs.append(mi_estimate)
+#                 ii += 1
+#             pbar_test.update(1)
+#     return mi_runs
 
 
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
-                      cond_set: np.ndarray, exp_name: str, device: str, kwargs_m, kwargs_c, epochs_c: int, 
+                      cond_set: np.ndarray, exp_name: str, device: str, kwargs_m, kwargs_c, 
                       num_runs: int=30, batch_size_m: int =128, batch_size_c: int =128, num_workers: int =0) -> bool:
     
     print('Estimating x marginal...')
     x_uni = marginal_transform(x_input, exp_name, device=device, **kwargs_m)
     print('Estimating y marginal...')
     y_uni = marginal_transform(y_input, exp_name, device=device, **kwargs_m)
-    print('Estimating cond set marginals...')
-    cond_uni = marginal_transform(cond_set, exp_name, device=device, **kwargs_m)
+
+    if cond_set is not None:
+        print('Estimating cond set marginals...')
+        cond_set = marginal_transform(cond_set, exp_name, device=device, **kwargs_m)
+        cond_set_dim = cond_set.shape[1]
+    else:
+        cond_set_dim = None
 
     # Transform into data object
     print('Creating copula dataset..')
     __, __, __, loader_train, loader_val, loader_test = split_data_copula(x_uni, 
                                                                           y_uni,
-                                                                          cond_uni, 
+                                                                          cond_set, 
                                                                           batch_size=128, 
                                                                           num_workers=0, 
                                                                           return_datasets=True)
 
     print('Estimating copula..')
-    experiment, __, __ = copula_estimator(loader_train, loader_val, loader_test, cond_set_dim=cond_uni.shape[-1], 
-                                          exp_name=exp_name, device=device, epochs=epochs_c, batch_size=batch_size_c, 
+    experiment, __, __ = copula_estimator(loader_train, loader_val, loader_test, cond_set_dim=cond_set_dim, 
+                                          exp_name=exp_name, device=device, batch_size=batch_size_c, 
                                           num_workers=num_workers, **kwargs_c)
     cop_flow = experiment.model
 
     print('Estimating mutual information..')
     with torch.no_grad():
         cop_flow.eval()
-        mi_runs = mi_loop(cop_flow, cond_uni.shape[-1], num_runs, device)
+        print('Estimating mutual information..')
+        mi = mi_estimator(cop_flow, device=device, cond_set=cond_set)
 
-    print('Running hypothesis test..')
-    result = independence_test(np.array(mi_runs), threshold=0.05)
+    print('Running independence test..')
+    result = independence_test(mi, threshold=0.05)
+
+    #result = independence_test(np.array(mi_runs), threshold=0.05)
     return result
 
 
@@ -210,7 +218,6 @@ if __name__ == '__main__':
 
     # Training settings
     args = TrainOptions().parse()   # get training options
-    # args.experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
     args.flow_name = ''    
 
     # Create Folders
@@ -240,7 +247,9 @@ if __name__ == '__main__':
               'tail_bound': args.tail_bound_m,
               'hidden_units': args.hidden_units_m,
               'tails': args.tails_m,
-              'identity_init': args.identity_init_m}
+              'identity_init': args.identity_init_m,
+              'epochs': args.epochs_m,
+              'batch_size': args.batch_size_m}
 
     # kwargs copula
     kwargs_c = {'n_layers': args.n_layers_c,
@@ -251,7 +260,9 @@ if __name__ == '__main__':
               'tail_bound': args.tail_bound_c,
               'hidden_units': args.hidden_units_m,
               'tails': args.tails_m,
-              'identity_init': args.identity_init_m}
+              'identity_init': args.identity_init_m,
+              'epochs': args.epochs_c,
+              'batch_size': args.batch_size_c}
     #
     print(copula_indep_test(x, y, z, exp_name=args.exp_name, 
                             device=args.device, 
