@@ -1,17 +1,8 @@
-from cdt.data import load_dataset
 import networkx as nx
-from utils.pc_utils import pcalg, resit
-import numpy as np
-import matplotlib.pyplot as plt
-import time 
-import os 
-import matplotlib.pyplot as plt
+from utils.pc_utils import pcalg
 import networkx as nx
-from eval.plots import plot_graph
 import cdt
-import netrd
 import pandas as pd
-from utils import set_seeds
 
 
 def pc_estimator(input_dataset: pd.DataFrame, target_graph: nx.Graph, indep_test,
@@ -44,7 +35,6 @@ def shd_calculator(target_graph: nx.Graph, estimated_graph: nx.Graph):
     :param estimated_graph: the estimated graph.
     :return: the structural hamming distance.
     """
-    distance_measure = netrd.distance.Hamming()
-    shd = distance_measure.dist(G1=target_graph, G2=estimated_graph)
+    shd = cdt.metrics.SHD(target_graph, estimated_graph)
     print('Structural hamming distance: {}'.format(shd))
     return shd

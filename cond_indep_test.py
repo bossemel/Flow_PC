@@ -8,10 +8,6 @@ from options import TrainOptions
 from data_provider import split_data_marginal,  split_data_copula
 import os
 import json
-import random
-import scipy.stats
-import tqdm 
-from eval.plots import visualize_joint
 eps = 1e-7
 
 
@@ -204,14 +200,13 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
     print('Estimating mutual information..')
     with torch.no_grad():
         cop_flow.eval()
-        print('Estimating mutual information..')
         mi = mi_estimator(cop_flow, device=device, cond_set=cond_set)
 
-    print('Running independence test..')
-    result = independence_test(mi, threshold=0.05)
+    #print('Running independence test..')
+    #result = independence_test(mi, threshold=0.05)
 
     #result = independence_test(np.array(mi_runs), threshold=0.05)
-    return result
+    return mi
 
 
 if __name__ == '__main__':
