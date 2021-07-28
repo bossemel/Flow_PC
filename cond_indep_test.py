@@ -177,7 +177,7 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
 
     if cond_set is not None:
         print('Estimating cond set marginals...')
-        cond_set = marginal_transform(cond_set, exp_name, device=device, **kwargs_m)
+        cond_set = marginal_transform(cond_set, exp_name, device=device, **kwargs_m).float()
         cond_set_dim = cond_set.shape[1]
     else:
         cond_set_dim = None
