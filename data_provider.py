@@ -235,9 +235,10 @@ class DataProvider(Dataset):
 
 
 def split_data_marginal(inputs, batch_size, num_workers=12, return_datasets=False):
+
     # Transform into data object
-    data_train, data_val = train_test_split(inputs, test_size=0.2)
-    data_val, data_test = train_test_split(data_val, test_size=0.5)
+    data_train, data_val = train_test_split(inputs, test_size=0.2, shuffle=True)
+    data_val, data_test = train_test_split(data_val, test_size=0.5, shuffle=True)
 
     # Normalize
     scaler = sklearn.preprocessing.StandardScaler()
@@ -276,8 +277,8 @@ def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers, ret
         inputs_cond = torch.cat([x_inputs, y_inputs], axis=1)
 
 
-    data_train, data_val = train_test_split(inputs_cond, test_size=0.20)
-    data_val, data_test = train_test_split(data_val, test_size=0.50)
+    data_train, data_val = train_test_split(inputs_cond, test_size=0.20, shuffle=True)
+    data_val, data_test = train_test_split(data_val, test_size=0.50, shuffle=True)
 
     # Normalize
     scaler = TorchStandardScaler()

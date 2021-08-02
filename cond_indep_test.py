@@ -8,6 +8,8 @@ from options import TrainOptions
 from data_provider import split_data_marginal,  split_data_copula
 import os
 import json
+import scipy.stats
+from eval.plots import visualize_joint
 eps = 1e-7
 
 
@@ -168,7 +170,8 @@ def independence_test(mi: float, threshold: float =0.05):
 
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
                       cond_set: np.ndarray, exp_name: str, device: str, kwargs_m, kwargs_c, 
-                      num_runs: int=30, batch_size_m: int =128, batch_size_c: int =128, num_workers: int =0) -> bool:
+                      num_runs: int=30, batch_size_m: int =128, batch_size_c: int =128, num_workers: int =0,
+                      visualize=True) -> bool:
     
     print('Estimating x marginal...')
     x_uni = marginal_transform(x_input, exp_name, device=device, **kwargs_m)
@@ -181,6 +184,19 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
         cond_set_dim = cond_set.shape[1]
     else:
         cond_set_dim = None
+
+    if visualize:
+        figures_path = os.path.join('results', 'testing', 'pc_cond_ind_test', exp_name)
+        if not os.path.exists(figures_path):
+            os.makedirs(figures_path)
+        inputs = torch.cat([x_uni[:1000, :], y_uni[:1000, :]], axis=1).cpu().numpy()
+        visualize_joint(inputs, figures_path, name='input_dataset')
+        norm_distr = scipy.stats.norm()
+        visualize_joint(norm_distr.cdf(inputs), figures_path, name='input_uni_dataset')
+        if cond_set is not None:
+            visualize_joint(cond_set[:1000, :], figures_path, name='cond_input_dataset')
+            visualize_joint(norm_distr.cdf(cond_set[:1000, :]), figures_path, name='cond_input_uni_dataset')
+
 
     # Transform into data object
     print('Creating copula dataset..')
@@ -196,6 +212,14 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
                                           exp_name=exp_name, device=device, batch_size=batch_size_c, 
                                           num_workers=num_workers, **kwargs_c)
     cop_flow = experiment.model
+
+    if visualize:
+        figures_path = os.path.join('results', 'testing', 'figures', 'pc_cond_ind_test', exp_name)
+        if not os.path.exists(figures_path):
+            os.makedirs(figures_path)
+        # Plot copula samples
+        samples = cop_flow.sample_copula(1000, context=cond_set[:1000, :] if cond_set is not None else None).detach().cpu().numpy()
+        visualize_joint(samples, figures_path, name='cop_samples')
 
     print('Estimating mutual information..')
     with torch.no_grad():

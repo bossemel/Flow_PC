@@ -34,17 +34,10 @@ def visualize1d(model, true_samples: np.ndarray, device: str, path: str, obs: in
 
     fig.legend(bbox_to_anchor=(0, 0, 0.97, 0.97), fontsize=20)
     fig.tight_layout()
-
-    fig.savefig(os.path.join(path, '{}_bestval.pdf'.format(name)),
-                    dpi=300, bbox_inches='tight')
-
-
-
-def plot_copula():
-    raise NotImplementedError
-
-def plot_marginal():
-    raise NotImplementedError
+    path = os.path.join(path, '{}_bestval.pdf'.format(name))
+    fig.savefig(path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print('Saved {} to {}'.format(path.split('/')[-1], path))
 
 
 def visualize_joint(data: np.ndarray, figures_path: str, name: str, axis_1_name: str =None, axis_2_name: str =None) -> None:
@@ -58,8 +51,10 @@ def visualize_joint(data: np.ndarray, figures_path: str, name: str, axis_1_name:
     fig = plt.figure()
     fig = sns.jointplot(x=data[:, 0], y=data[:, 1], kind='hex')
     fig.set_axis_labels(axis_1_name, axis_2_name, fontsize=16)
-    fig.savefig(os.path.join(figures_path, name + '.pdf'), dpi=300, bbox_inches='tight')
-
+    path = os.path.join(figures_path, name + '.pdf')
+    fig.savefig(path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print('Saved {} to {}'.format(path.split('/')[-1], path))
 
 def plot_result_graphs(figures_path: str, exp_name: str, stats: dict, flow_name: str ='') -> None:
     """Plots training and validation set loss.
@@ -79,29 +74,17 @@ def plot_result_graphs(figures_path: str, exp_name: str, stats: dict, flow_name:
     fig_1.savefig(path, dpi=300, facecolor='w', edgecolor='w',
                   orientation='portrait', format='pdf',
                   transparent=False, bbox_inches='tight', pad_inches=0.1)
-
-
-def visualize_joint(data: np.ndarray, figures_path: str, name: str, axis_1_name: str =None, axis_2_name: str =None) -> None:
-    """Visualize 2D distribution as a seaborn jointplot.
-    """
-    if axis_1_name is None:
-        axis_1_name = 'X1'
-    if axis_2_name is None:
-        axis_2_name = 'X2'
-
-    fig = plt.figure()
-    fig = sns.jointplot(x=data[:, 0], y=data[:, 1], kind='hex')
-    fig.set_axis_labels(axis_1_name, axis_2_name, fontsize=16)
-    fig.savefig(os.path.join(figures_path, name + '.pdf'), dpi=300, bbox_inches='tight')
-
+    plt.close()
+    print('Saved {} to {}'.format(path.split('/')[-1], path))
 
 def plot_graph(graph, path):
     """
     Plot the graph G with nodes and edges at positions pos.
     """
-    plt.figure(figsize=(8,8))
+    plt.figure(figsize=(10,10))
     pos = graphviz_layout(graph, prog="circo")
     nx.draw(graph, pos, with_labels=True, node_size=3000, font_size=20, 
             alpha=0.9, width=2)
     plt.savefig(path, format='pdf', dpi=300)
     plt.close()
+    print('Saved {} to {}'.format(path.split('/')[-1], path))

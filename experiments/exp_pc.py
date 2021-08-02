@@ -11,13 +11,13 @@ from pc import pc_estimator, shd_calculator
 import pandas as pd
 import networkx as nx
 from utils.pc_utils import pcalg, resit
-from eval.plots import plot_graph
+from eval.plots import plot_graph, visualize_joint
 from cond_indep_test import copula_indep_test
 
 eps = 1e-7
 
 
-def pc_exp(input_dataset: pd.DataFrame, target_graph: nx.Graph, indep_test, device,
+def pc_exp(input_dataset: pd.DataFrame, target_graph: nx.Graph, indep_test, alpha, device,
            figures_path, kwargs_m=None, kwargs_c=None, add_name='') -> float:
     """
     Calculate the PC of a given graph.
@@ -28,14 +28,16 @@ def pc_exp(input_dataset: pd.DataFrame, target_graph: nx.Graph, indep_test, devi
     """
     # Plot the graph
     plot_graph(target_graph, os.path.join(figures_path, add_name + 'sachs_graph.pdf'))
-    
+    visualize_joint(input_dataset[['PKC', 'PKA']].to_numpy(), figures_path, 'input_dataset')
+
     # Estimate the graph
-    estimated_graph = pc_estimator(input_dataset, target_graph, indep_test=indep_test,
+    estimated_graph = pc_estimator(input_dataset, indep_test=indep_test, alpha=alpha,
                                     kwargs_m=kwargs_m, kwargs_c=kwargs_c, device=device)
 
     # Plot the estimated graph
-    nx.draw(estimated_graph)
-    plot_graph(estimated_graph, os.path.join(figures_path, add_name + 'est_graph.pdf'))
+    undirected_graph = estimated_graph.to_undirected()
+    nx.draw(undirected_graph)
+    plot_graph(undirected_graph, os.path.join(figures_path, add_name + 'est_graph.pdf'))
     
     # Calculate the structural hamming distance
     shd = shd_calculator(target_graph, estimated_graph)
@@ -48,6 +50,7 @@ if __name__ == '__main__':
     args = TrainOptions().parse()
     args.exp_name = 'exp_pc'
     args.flow_name = 'resit'
+    args.alphe = 0.05
 
     # Create Folders
     args = create_folders(args)
@@ -70,7 +73,8 @@ if __name__ == '__main__':
 
     # Run the PC algorithm
     start = time.time()
-    pc_exp(s_data_small, s_graph_small, indep_test=resit, figures_path=args.figures_path,
+    pc_exp(s_data_small, s_graph_small, indep_test=resit, alpha=args.alpha, 
+            figures_path=args.figures_path,
            device=args.device, add_name='resit')
     end = time.time()
     print('Elapsed time: {}'.format(end - start))
@@ -107,6 +111,7 @@ if __name__ == '__main__':
     # Create new folders
     args.exp_name = 'exp_pc'
     args.flow_name = 'cop_flow'
+    args.alpha = 0.01
 
     # Create Folders
     args = create_folders(args)
@@ -114,7 +119,7 @@ if __name__ == '__main__':
         json.dump(args.__dict__, f, indent=2)
 
     start = time.time()
-    pc_exp(s_data_small, s_graph_small, indep_test=copula_indep_test, device=args.device,
+    pc_exp(s_data_small, s_graph_small, indep_test=copula_indep_test, alpha=args.alpha, device=args.device,
            kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
     end = time.time()
     print('Elapsed time: {}'.format(end - start))

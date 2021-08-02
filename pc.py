@@ -5,22 +5,23 @@ import cdt
 import pandas as pd
 
 
-def pc_estimator(input_dataset: pd.DataFrame, target_graph: nx.Graph, indep_test,
+def pc_estimator(input_dataset: pd.DataFrame, indep_test, alpha,
                  device, kwargs_m=None, kwargs_c=None):
     """
     Estimate the PC algorithm. 
     :param input_dataset: the dataset to be used for estimation.
-    :param target_graph: the target graph.
     :param indep_test: the function to be used for estimation.
     :return: the estimated graph.
     """
     # Estimate the skeleton graph
     pc = pcalg(dataset=input_dataset.to_numpy(), feature_names=input_dataset.columns.to_list(),
                 kwargs_m=kwargs_m, kwargs_c=kwargs_c, device=device)
-    pc.identify_skeleton_original(indep_test=indep_test)
+    pc.identify_skeleton_original(indep_test=indep_test, alpha=alpha)
 
-    # Orient the graph
-    pc.orient_graph(indep_test=indep_test, alpha=0.05)
+    # # Orient the graph
+    # pc.orient_graph(indep_test=indep_test, alpha=alpha)
+    # Instead, create bidirectional edges:
+    pc.G = pc.G.to_directed()
 
     # Return the graph with labels
     estimated_graph = pc.G

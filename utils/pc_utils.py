@@ -107,8 +107,8 @@ class pcalg():
                                             self.dataset[:,z] if len(z) > 1 else None,
                                             kwargs_m=self.kwargs_m,
                                             kwargs_c=self.kwargs_c,
-                                            exp_name='pc',
-                                            device=self.device) # @Todo: add exp_name and device
+                                            exp_name='pc_{}_{}_{}'.format(x,y,z),
+                                            device=self.device)
                         print("""Independence test between {} and {} conditioned on {}: {}""".format(
                            self.features[x],self.features[y],[self.features[f] for f in z], pvalue))
                         print("Test Number: {}".format(counter))
@@ -151,11 +151,13 @@ class pcalg():
                 if z in self.d_separators[(x, y)]:
                     continue
                 if not self.stable:
-                    pvalue = indep_test(self.dataset[x],
-                                        self.dataset[y], 
-                                        self.dataset[z],
-                                        self.kwargs_m,
-                                        self.kwargs_c)
+                    pvalue = indep_test(self.dataset[:,x],
+                                        self.dataset[:,y],
+                                        self.dataset[:,z] if len(z) > 1 else None,
+                                        kwargs_m=self.kwargs_m,
+                                        kwargs_c=self.kwargs_c,
+                                        exp_name='pc_{}_{}_{}'.format(x,y,z),
+                                        device=self.device)
                     if pvalue <= alpha:
                         # x and y are conditionnaly dependent
                         # so z is a collider.
@@ -190,7 +192,7 @@ class pcalg():
         return
 
 
-def resit(X, Y, Z, kwargs_m, kwargs_c, exp_name, device):
+def resit(X, Y, Z, **kwargs): #kwargs_m, kwargs_c, exp_name, device):
     """
     Independently model X and Y as a
     function of Z using models that follow
