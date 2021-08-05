@@ -10,6 +10,7 @@ from fcit import fcit
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 from sklearn.feature_selection import mutual_info_regression
+import os 
 
 
 def check_dataset(dataset):
@@ -55,7 +56,7 @@ class pcalg():
     """
     
     
-    def __init__(self, dataset, device, feature_names=None, kwargs_m=None, kwargs_c=None):
+    def __init__(self, dataset, device, exp_name, feature_names=None, kwargs_m=None, kwargs_c=None):
         self.dataset = check_dataset(dataset)
         self.dataset = dataset
         self.features = get_features(dataset,
@@ -65,6 +66,8 @@ class pcalg():
         self.kwargs_c = kwargs_c
 
         self.device = device
+
+        self.exp_name = exp_name
         
     def _instantiate_fully_connected_graph(self):
         self.G.add_nodes_from(self.features.keys())
@@ -107,7 +110,7 @@ class pcalg():
                                             self.dataset[:,z] if len(z) > 1 else None,
                                             kwargs_m=self.kwargs_m,
                                             kwargs_c=self.kwargs_c,
-                                            exp_name='pc_{}_{}_{}'.format(x,y,z),
+                                            exp_name='{}_{}_{}'.format(x,y,z),
                                             device=self.device)
                         print("""Independence test between {} and {} conditioned on {}: {}""".format(
                            self.features[x],self.features[y],[self.features[f] for f in z], pvalue))

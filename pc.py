@@ -6,7 +6,7 @@ import pandas as pd
 
 
 def pc_estimator(input_dataset: pd.DataFrame, indep_test, alpha,
-                 device, kwargs_m=None, kwargs_c=None):
+                 device, exp_name, kwargs_m=None, kwargs_c=None):
     """
     Estimate the PC algorithm. 
     :param input_dataset: the dataset to be used for estimation.
@@ -15,12 +15,13 @@ def pc_estimator(input_dataset: pd.DataFrame, indep_test, alpha,
     """
     # Estimate the skeleton graph
     pc = pcalg(dataset=input_dataset.to_numpy(), feature_names=input_dataset.columns.to_list(),
+               exp_name=exp_name,
                 kwargs_m=kwargs_m, kwargs_c=kwargs_c, device=device)
     pc.identify_skeleton_original(indep_test=indep_test, alpha=alpha)
 
     # # Orient the graph
-    # pc.orient_graph(indep_test=indep_test, alpha=alpha)
-    # Instead, create bidirectional edges:
+    pc.orient_graph(indep_test=indep_test, alpha=alpha)
+    # Create bidirectional edges:
     pc.G = pc.G.to_directed()
 
     # Return the graph with labels

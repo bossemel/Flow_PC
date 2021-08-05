@@ -17,7 +17,7 @@ from cond_indep_test import copula_indep_test
 eps = 1e-7
 
 
-def pc_exp(input_dataset: pd.DataFrame, target_graph: nx.Graph, indep_test, alpha, device,
+def pc_exp(input_dataset: pd.DataFrame, target_graph: nx.Graph, indep_test, alpha, device, exp_name, 
            figures_path, kwargs_m=None, kwargs_c=None, add_name='') -> float:
     """
     Calculate the PC of a given graph.
@@ -31,7 +31,7 @@ def pc_exp(input_dataset: pd.DataFrame, target_graph: nx.Graph, indep_test, alph
     visualize_joint(input_dataset[['PKC', 'PKA']].to_numpy(), figures_path, 'input_dataset')
 
     # Estimate the graph
-    estimated_graph = pc_estimator(input_dataset, indep_test=indep_test, alpha=alpha,
+    estimated_graph = pc_estimator(input_dataset, indep_test=indep_test, alpha=alpha, exp_name=exp_name,
                                     kwargs_m=kwargs_m, kwargs_c=kwargs_c, device=device)
 
     # Plot the estimated graph
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     args = TrainOptions().parse()
     args.exp_name = 'exp_pc'
     args.flow_name = 'resit'
-    args.alphe = 0.05
+    args.alpha_indep = 0.05
 
     # Create Folders
     args = create_folders(args)
@@ -73,8 +73,8 @@ if __name__ == '__main__':
 
     # Run the PC algorithm
     start = time.time()
-    pc_exp(s_data_small, s_graph_small, indep_test=resit, alpha=args.alpha, 
-            figures_path=args.figures_path,
+    pc_exp(s_data_small, s_graph_small, indep_test=resit, alpha=args.alpha_indep, 
+            figures_path=args.figures_path, exp_name=args.exp_name,
            device=args.device, add_name='resit')
     end = time.time()
     print('Elapsed time: {}'.format(end - start))
@@ -108,18 +108,19 @@ if __name__ == '__main__':
               'use_batch_norm': args.batch_norm_c,
               'unconditional_transform': args.unconditional_transform_c}
 
-    # Create new folders
-    args.exp_name = 'exp_pc'
-    args.flow_name = 'cop_flow'
-    args.alpha = 0.01
+    # # Create new folders
+    # args.exp_name = 'exp_pc'
+    # args.flow_name = 'cop_flow'
+    # args.alpha_indep = 0.05
 
-    # Create Folders
-    args = create_folders(args)
-    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
-        json.dump(args.__dict__, f, indent=2)
+    # # Create Folders
+    # args = create_folders(args)
+    # with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
+    #     json.dump(args.__dict__, f, indent=2)
 
-    start = time.time()
-    pc_exp(s_data_small, s_graph_small, indep_test=copula_indep_test, alpha=args.alpha, device=args.device,
-           kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
-    end = time.time()
-    print('Elapsed time: {}'.format(end - start))
+    # start = time.time()
+    # pc_exp(s_data_small, s_graph_small, indep_test=copula_indep_test, 
+    #        alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
+    #        kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
+    # end = time.time()
+    # print('Elapsed time: {}'.format(end - start))

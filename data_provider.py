@@ -242,21 +242,21 @@ def split_data_marginal(inputs, batch_size, num_workers=12, return_datasets=Fals
 
     # Normalize
     scaler = sklearn.preprocessing.StandardScaler()
-    data_train = scaler.fit_transform(data_train)
-    data_val = scaler.transform(data_val)
-    data_test = scaler.transform(data_test)
+    data_train_scaled = scaler.fit_transform(data_train)
+    data_val_scaled = scaler.transform(data_val)
+    data_test_scaled = scaler.transform(data_test)
 
-    provider_train = DataProvider(data_train)
-    loader_train = torch.utils.data.DataLoader(provider_train, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    provider_train = DataProvider(data_train_scaled)
+    loader_train = torch.utils.data.DataLoader(provider_train, batch_size=batch_size, num_workers=num_workers)
             
-    provider_val = DataProvider(data_val)
-    loader_val = torch.utils.data.DataLoader(provider_val, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    provider_val = DataProvider(data_val_scaled)
+    loader_val = torch.utils.data.DataLoader(provider_val, batch_size=batch_size, num_workers=num_workers)
 
-    provider_test = DataProvider(data_test)
-    loader_test = torch.utils.data.DataLoader(provider_test, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    provider_test = DataProvider(data_test_scaled)
+    loader_test = torch.utils.data.DataLoader(provider_test, batch_size=batch_size, num_workers=num_workers)
     
     if return_datasets:
-        return data_train, data_val, data_test, loader_train, loader_val, loader_test
+        return data_train_scaled, data_val_scaled, data_test_scaled, loader_train, loader_val, loader_test
     return loader_train, loader_val, loader_test
 
 
@@ -288,15 +288,15 @@ def split_data_copula(x_inputs, y_inputs, cond_set, batch_size, num_workers, ret
     data_test = scaler.transform(data_test)
 
     provider_train = DataProvider(inputs=data_train[:, :2], context=data_train[:, 2:] if cond_set is not None else None)
-    loader_train = torch.utils.data.DataLoader(provider_train, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
+    loader_train = torch.utils.data.DataLoader(provider_train, batch_size=batch_size, num_workers=0 if x_inputs.is_cuda else num_workers)
 
 
     provider_val = DataProvider(inputs=data_val[:, :2], context=data_val[:, 2:] if cond_set is not None else None)
-    loader_val = torch.utils.data.DataLoader(provider_val, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
+    loader_val = torch.utils.data.DataLoader(provider_val, batch_size=batch_size, num_workers=0 if x_inputs.is_cuda else num_workers)
 
 
     provider_test = DataProvider(inputs=data_test[:, :2], context=data_test[:, 2:] if cond_set is not None else None)
-    loader_test = torch.utils.data.DataLoader(provider_test, batch_size=batch_size, shuffle=True, num_workers=0 if x_inputs.is_cuda else num_workers)
+    loader_test = torch.utils.data.DataLoader(provider_test, batch_size=batch_size, num_workers=0 if x_inputs.is_cuda else num_workers)
     
     if return_datasets:
         return data_train, data_val, data_test, loader_train, loader_val, loader_test
