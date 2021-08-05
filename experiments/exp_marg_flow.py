@@ -1,10 +1,9 @@
 from cond_indep_test import marginal_estimator
 from options import TrainOptions
-from utils import create_folders, HiddenPrints
+from utils import create_folders
 import torch
 import numpy as np
 import json
-import random
 import os 
 from utils.load_and_save import save_statistics
 import scipy.stats
@@ -12,8 +11,7 @@ from utils import create_folders, random_search, set_seeds
 from data_provider import split_data_marginal, Marginal_Distr
 from options import TrainOptions
 from eval.plots import visualize1d
-import matplotlib.pyplot as plt
-eps = 1e-10
+eps = 1e-7
 
 
 def kde_nll(data_train: np.ndarray, data_test: np.ndarray) -> np.ndarray:
@@ -53,7 +51,12 @@ def exp_marg_transform(inputs: np.ndarray) -> None:
                                                       weight_decay=args.weight_decay_m)
 
     # Plot results
-    visualize1d(experiment.model, device=args.device, path=experiment.figures_path, true_samples=data_train, obs=1000, name='marg_flow')
+    visualize1d(experiment.model, 
+                device=args.device, 
+                path=experiment.figures_path, 
+                true_samples=data_train, 
+                obs=1000, 
+                name='marg_flow')
 
     experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
 

@@ -13,6 +13,7 @@ from data_provider import split_data_copula, Copula_Distr, mutivariate_copula
 from options import TrainOptions
 from eval.plots import visualize_joint
 from eval.metrics import jsd_copula
+import time 
 eps = 1e-7
 
 
@@ -44,20 +45,11 @@ def cop_eval(model: Basic_Flow, inputs: torch.Tensor, cond_inputs: torch.Tensor,
         print('Flow JSD: {}, KDE JSD: {}'.format(eval_metrics['cop_flow_jsd'][0], eval_metrics['kde_jsd'][0]))
 
     print('Estimating mutual information..')
-    #num_runs = 30
-    #mi_runs = mi_loop(model, cond_set_dim, num_runs, args.device)
-    #mi_runs = mi_estimator_m(model, device=args.device, cond_set_dim=cond_set_dim)
-    #eval_metrics['mi_runs_mean'] = [np.mean(mi_runs)]
-    #eval_metrics['mi_runs_std'] = [np.std(mi_runs)]
-    
-
     mi = mi_estimator(model, device=args.device, cond_set=cond_inputs)
     eval_metrics['mi'] = [mi.item()]
     print('MI: {}'.format(mi))
     result = independence_test(mi, threshold=0.05)
 
-    #print('Running hypothesis test..')
-    #result = hypothesis_test(np.array(mi_runs), threshold=0.05)
     eval_metrics['independent'] = [result]
     return eval_metrics
 
@@ -151,19 +143,19 @@ def exp_2D_cop(args):
 
 
 def exp_4D_cop(args):
-    #args.n_layers = 1
+    args.n_layers = 1
     args.hidden_units = 16
-    #args.n_blocks = 3
-    #args.n_bins = 30
+    args.n_blocks = 3
+    args.n_bins = 30
     args.dropout = 0.15
-    #args.lr = 0.01
-    #args.weight_decay = 1e-08
-    #args.tail_bound = 32
+    args.lr = 0.01
+    args.weight_decay = 1e-08
+    args.tail_bound = 32
     args.batch_norm = False
-    #args.amsgrad = False
-    #args.clip_grad = False
-    #args.identity_init = True
-    #args.unconditional_transform = False
+    args.amsgrad = False
+    args.clip_grad = False
+    args.identity_init = True
+    args.unconditional_transform = False
 
     experiments = [('indep_4D', 'independent', None), 
                    ('clayton_con_4D', 'clayton', 2), 
@@ -254,15 +246,17 @@ if __name__ == '__main__':
     set_seeds(seed=args.seed, use_cuda=use_cuda)
 
     #exp_2D_cop(args)
-    exp_4D_cop(args)
+    #exp_4D_cop(args)
 
     #Get inputs
-    # copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=True)
-    # inputs = torch.from_numpy(copula_distr.sample(args.obs)) # @Todo: create conditional inputs
-    # normal_distr = torch.distributions.normal.Normal(0, 1)
-    # inputs = normal_distr.icdf(inputs).float()
-    # exp_cop(inputs, copula_distr)
-    # #exit()
+    copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=True)
+    inputs = torch.from_numpy(copula_distr.sample(args.obs)) # @Todo: create conditional inputs
+    normal_distr = torch.distributions.normal.Normal(0, 1)
+    inputs = normal_distr.icdf(inputs).float()
+    start_time = time.time()
+    exp_cop(inputs, copula_distr)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    #exit()
 
     #random_search_2D()
     #random_search_4D()

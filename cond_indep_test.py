@@ -8,11 +8,10 @@ from options import TrainOptions
 from data_provider import split_data_marginal,  split_data_copula
 import os
 import json
-import random
 import scipy.stats
-import tqdm 
-from eval.plots import visualize_joint
-eps = 1e-10
+from eval.plots import visualize_joint, visualize1d
+from utils.load_and_save import save_statistics
+eps = 1e-7
 
 
 def marginal_estimator(loader_train: torch.utils.data.DataLoader, loader_val: torch.utils.data.DataLoader, 
@@ -49,7 +48,10 @@ def marginal_estimator(loader_train: torch.utils.data.DataLoader, loader_val: to
 def marginal_transform_1d(inputs: np.ndarray, exp_name: str, device: str, epochs: int =100, batch_size: int =128, 
                           num_workers: int =0, variable_num: int =0, **kwargs) -> np.ndarray:
     # Transform into data object
-    loader_train, loader_val, loader_test = split_data_marginal(inputs, batch_size, num_workers=num_workers)
+    data_train_scaled, data_val_scaled, data_test_scaled, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
+                                                                                                                      batch_size, 
+                                                                                                                      num_workers=num_workers, 
+                                                                                                                      return_datasets=True)
 
     experiment, __, __ = marginal_estimator(loader_train=loader_train, 
                                             loader_val=loader_val, 
@@ -61,16 +63,29 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name: str, device: str, epochs
                                             num_workers=num_workers, 
                                             variable_num=variable_num, 
                                             **kwargs)
+
+    # 
+    inputs_scaled = np.concatenate([data_train_scaled, data_val_scaled, data_test_scaled], axis=0)
     
     # Transform
-    inputs = torch.from_numpy(inputs).float().to(device)
-    outputs = experiment.model.transform_to_noise(inputs)
+    inputs_scaled = torch.from_numpy(inputs_scaled).float().to(device)
+    outputs = experiment.model.transform_to_noise(inputs_scaled)
 
+    # Plot results
+    visualize1d(experiment.model, 
+                device=device, 
+                path=experiment.figures_path, 
+                true_samples=inputs_scaled.detach().cpu().numpy(), 
+                obs=1000, 
+                name='marg_flow')
+
+    norm_distr = scipy.stats.norm()
+    visualize_joint(norm_distr.cdf(torch.cat([outputs, outputs], axis=1).detach().cpu().numpy()), figures_path=experiment.figures_path, name='marg_flow_output')
     return outputs
 
 
 def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, **kwargs) -> np.ndarray:
-    if inputs.shape[1] > 1:
+    if inputs.ndim > 1:
         outputs = torch.empty_like(torch.from_numpy(inputs)).to(device).detach()
         for dim in range(inputs.shape[1]):
             outputs[:, dim: dim + 1] = marginal_transform_1d(inputs=inputs[:, dim: dim+1],
@@ -78,8 +93,8 @@ def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, **kwargs)
                                                              device=device,
                                                              variable_num=dim,
                                                              **kwargs).reshape(-1, 1).detach()
-    elif inputs.shape[1] == 1:
-        outputs = marginal_transform_1d(inputs=inputs,  exp_name=exp_name,
+    elif inputs.ndim == 1:
+        outputs = marginal_transform_1d(inputs=inputs.reshape(-1,1),  exp_name=exp_name,
                                         device=device, **kwargs).reshape(-1, 1).detach()
     else:
         raise ValueError('Invalid input shape.')
@@ -125,10 +140,6 @@ def mi_estimator(cop_flow: Basic_Flow, device: str, obs_n: int =1000, obs_m: int
     for mm in range(obs_m):
         cop_samples = cop_flow.sample_copula(num_samples=cond_set.shape[0] if cond_set is not None else obs_n, 
                                              context=cond_set.to(device) if cond_set is not None else None)
-        #@Todo: visualize cond set and inputs here
-        #visualize_joint(cop_samples.cpu().numpy(), os.path.join('results', 'testing'), 'mi_cop_samples')
-        #visualize_joint(cond_set.cpu().numpy(), os.path.join('results', 'testing'), 'mi_cond_set_norm')
-        #visualize_joint(norm_distr.cdf(cond_set).cpu().numpy(), os.path.join('results', 'testing'), 'mi_cond_set_uni')
         log_density[:, mm] = cop_flow.log_pdf_uniform(cop_samples, 
                                                       context=norm_distr.cdf(cond_set).to(device) if cond_set is not None else None)
     
@@ -143,74 +154,75 @@ def independence_test(mi: float, threshold: float =0.05):
         return False
         
 
-# def hypothesis_test(mutual_information: float, threshold: float = 0.05) -> bool:
-#     statistic, pvalue = scipy.stats.ttest_1samp(mutual_information, 0, axis=0, nan_policy='raise')
-#     print('Test statistic: {}, P-Value: {}'.format(statistic, pvalue))
-#     print('Threshold: ', threshold)
-#     if pvalue > threshold:
-#         print('MI not significantly different from zero. Sample conditionally independent')
-#         return True
-#     elif pvalue <= threshold:
-#         print('MI significantly different from zero. Samples not conditionally independent.')
-#         return False
-#     else:
-#         print('Invalid test result.')
-
-
-def mi_loop(cop_flow: Basic_Flow, cond_set_dim: int, num_runs: int, device: str) -> list:
-    mi_runs = []
-    ii = 0
-    with tqdm.tqdm(total=num_runs) as pbar_test:  # ini a progress bar
-        while ii < num_runs:
-            mi_estimate = mi_estimator(cop_flow, device=device, cond_set_dim=cond_set_dim)
-            if not np.isnan(mi_estimate):
-                mi_runs.append(mi_estimate)
-                ii += 1
-            pbar_test.update(1)
-    return mi_runs
-
-
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
-                      cond_set: np.ndarray, exp_name: str, device: str, kwargs_m, kwargs_c, epochs_c: int, 
-                      num_runs: int=30, batch_size_m: int =128, batch_size_c: int =128, num_workers: int =0) -> bool:
-    
+                      cond_set: np.ndarray, exp_name: str, device: str, kwargs_m, kwargs_c, 
+                      num_runs: int=30, batch_size_m: int =128, batch_size_c: int =128, num_workers: int =0,
+                      visualize=True) -> bool:
+
     print('Estimating x marginal...')
     x_uni = marginal_transform(x_input, exp_name, device=device, **kwargs_m)
     print('Estimating y marginal...')
     y_uni = marginal_transform(y_input, exp_name, device=device, **kwargs_m)
-    print('Estimating cond set marginals...')
-    cond_uni = marginal_transform(cond_set, exp_name, device=device, **kwargs_m)
+
+    if cond_set is not None:
+        print('Estimating cond set marginals...')
+        cond_set = marginal_transform(cond_set, exp_name, device=device, **kwargs_m).float()
+        cond_set_dim = cond_set.shape[1]
+    else:
+        cond_set_dim = None
+
+    if visualize:
+        # Generate the directory names
+        exp_path = os.path.join('results', exp_name, 'cf')
+        figures_path = os.path.join(exp_path, 'figures')
+        if not os.path.exists(figures_path):
+            os.makedirs(figures_path)
+        inputs = torch.cat([x_uni[:1000, :], y_uni[:1000, :]], axis=1).cpu().numpy()
+        visualize_joint(inputs, figures_path, name='input_dataset')
+        norm_distr = scipy.stats.norm()
+        visualize_joint(norm_distr.cdf(inputs), figures_path, name='input_uni_dataset')
+        if cond_set is not None:
+            visualize_joint(cond_set[:1000, :].detach().cpu().numpy(), figures_path, name='cond_input_dataset')
+            visualize_joint(norm_distr.cdf(cond_set[:1000, :].detach().cpu().numpy()), figures_path, name='cond_input_uni_dataset')
+
 
     # Transform into data object
     print('Creating copula dataset..')
     __, __, __, loader_train, loader_val, loader_test = split_data_copula(x_uni, 
                                                                           y_uni,
-                                                                          cond_uni, 
+                                                                          cond_set, 
                                                                           batch_size=128, 
                                                                           num_workers=0, 
                                                                           return_datasets=True)
 
     print('Estimating copula..')
-    experiment, __, __ = copula_estimator(loader_train, loader_val, loader_test, cond_set_dim=cond_uni.shape[-1], 
-                                          exp_name=exp_name, device=device, epochs=epochs_c, batch_size=batch_size_c, 
+    experiment, __, test_metrics = copula_estimator(loader_train, loader_val, loader_test, cond_set_dim=cond_set_dim, 
+                                          exp_name=exp_name, device=device, batch_size=batch_size_c, 
                                           num_workers=num_workers, **kwargs_c)
     cop_flow = experiment.model
+
+    if visualize:
+        # Plot copula samples
+        samples = cop_flow.sample_copula(1000, context=cond_set[:1000, :] if cond_set is not None else None).detach().cpu().numpy()
+        visualize_joint(samples, figures_path, name='cop_samples')
 
     print('Estimating mutual information..')
     with torch.no_grad():
         cop_flow.eval()
-        mi_runs = mi_loop(cop_flow, cond_uni.shape[-1], num_runs, device)
+        mi = mi_estimator(cop_flow, device=device, cond_set=cond_set)
 
-    print('Running hypothesis test..')
-    result = independence_test(np.array(mi_runs), threshold=0.05)
-    return result
+
+    test_metrics['mi'] = [mi]
+    experiment_logs = os.path.join('results', experiment.exp_name, 'cf', 'stats')
+    save_statistics(experiment_logs, 'test_summary.csv', test_metrics, current_epoch=0, continue_from_mode=False)
+
+    return mi
 
 
 if __name__ == '__main__':
 
     # Training settings
     args = TrainOptions().parse()   # get training options
-    # args.experiment_logs = os.path.join('results', args.exp_name, 'mf_0', 'stats')
     args.flow_name = ''    
 
     # Create Folders
@@ -240,7 +252,9 @@ if __name__ == '__main__':
               'tail_bound': args.tail_bound_m,
               'hidden_units': args.hidden_units_m,
               'tails': args.tails_m,
-              'identity_init': args.identity_init_m}
+              'identity_init': args.identity_init_m,
+              'epochs': args.epochs_m,
+              'batch_size': args.batch_size_m}
 
     # kwargs copula
     kwargs_c = {'n_layers': args.n_layers_c,
@@ -251,7 +265,9 @@ if __name__ == '__main__':
               'tail_bound': args.tail_bound_c,
               'hidden_units': args.hidden_units_m,
               'tails': args.tails_m,
-              'identity_init': args.identity_init_m}
+              'identity_init': args.identity_init_m,
+              'epochs': args.epochs_c,
+              'batch_size': args.batch_size_c}
     #
     print(copula_indep_test(x, y, z, exp_name=args.exp_name, 
                             device=args.device, 

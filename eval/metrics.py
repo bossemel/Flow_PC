@@ -1,8 +1,7 @@
 import torch 
 import warnings
 from data_provider import Copula_Distr
-eps = 1e-10
-
+eps = 1e-7
 
 # def jsd_copula_context(pred_dist, true_dist, device: str, context: torch.Tensor, num_samples: int, cond_copula_distr: Copula_Distr) -> float:
 #     """Returns JS-Divergence of the predicted distribution and the true distribution
