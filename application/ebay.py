@@ -36,8 +36,8 @@ def transform_data(data):
                 data = data[data['anon_thread_id'] != thread]
         else: 
             data = data[data['anon_thread_id'] != thread]
-    
-    return data
+
+    return data, counter
         
 
     
@@ -48,11 +48,48 @@ def transform_data(data):
 if __name__ == '__main__':
     
     # Load the data
-    data = pd.read_csv(os.path.join('datasets', 'ebay_data', 'anon_bo_threads.csv'), nrows=10000)
-    #print(data)
+    # exclude: buyer_us, byr_cntry_id, response_time, anon_slr_id, anon_byr_id
+    usecols = ['anon_thread_id', 
+                'offr_type_id', 
+                'status_id', 
+                'offr_price', 
+                'src_cre_date', 
+                'slr_hist', 
+                'byr_hist', 
+                'any_mssg', 
+                'fdbk_pstv_src', 
+                'fdbk_score_src']
 
-    # Transform the data 
-    data = transform_data(data)
-    print(data.head())
-    # data = transform_ebay(data)
+    chunksize = 10 ** 4
+    filename = os.path.join('datasets', 'ebay_data', 'anon_bo_threads.csv')
+    full_counter = 0
 
+    # Create empty header dataset 
+    header = pd.DataFrame(columns=['anon_thread_id', 
+                                   'fdbk_score_src', 
+                                   'fdbk_pstv_src', 
+                                   'offr_type_id',
+                                   'status_id', 
+                                   'offr_price', 
+                                   'src_cre_date', 
+                                   'slr_hist', 
+                                   'byr_hist',
+                                   'any_mssg', 
+                                   'concession', 
+                                   'used_response_time'])
+    processed_file_path = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed.csv')
+    header.to_csv(processed_file_path, mode='w', header=True, index=False)
+
+    for chunk in pd.read_csv(filename, chunksize=chunksize, usecols=usecols):
+        # Transform the data
+        data, counter = transform_data(chunk)
+
+        # Append to data file
+        data.to_csv(processed_file_path, mode='a', header=False, index=False)
+
+        # Count threads
+        full_counter += counter
+        print('Counter: {}'.format(full_counter))
+    print('Full counter: {}'.format(full_counter))
+
+    
