@@ -1,95 +1,49 @@
+import os
 import pandas as pd
-import os 
-import numpy as np
+import numpy as np 
 
 
 def transform_data(data):
     """
     Generate the concession variable
-    """
+    """    
     # Loop through thread ids
     unique_threads = data['anon_thread_id'].unique()
-    data['src_cre_date'] = pd.to_datetime(data['src_cre_date'], format='%d%b%Y %H:%M:%S')
-    counter = 0
-    for thread in unique_threads:
-        if len(data.loc[data['anon_thread_id'] == thread]) >= 3: 
-            
-            thread_sequence = data[data['anon_thread_id'] == thread]
-            
+
+    # Number of unique threads
+    n_unique_threads = len(unique_threads)
+
+    for tt, thread in enumerate(unique_threads):
+        print('Thread {} out of {}'.format(tt, n_unique_threads))
+
+        # Get index of data for this thread
+        thread_index = data.loc[data['anon_thread_id'] == thread].index.tolist()
+        
+        # Get thread sequence
+        thread_sequence = data.loc[thread_index, :]
+
+        if len(thread_sequence) > 4:
             # Sort by src_cre_date
             thread_sequence = thread_sequence.sort_values(by=['src_cre_date'])
-            offer_sequence = thread_sequence['offr_type_id'].tolist()
-            correct_sequence = [0] + [2, 1] * int((len(offer_sequence)-1)/2)
-            if (offer_sequence == correct_sequence) | (offer_sequence == (correct_sequence + [2])): # Todo: recheck if this is getting all of them
-                counter += 1
-                price_sequence = thread_sequence['offr_price'].tolist()
-                concession = [np.nan, np.nan]
-                for ii in range(len(price_sequence)-2):
-                    concession.append(abs(price_sequence[ii+2] - price_sequence[ii]))
-                data.loc[data['anon_thread_id'] == thread, 'concession'] = concession
-                response_sequence = thread_sequence['src_cre_date'].tolist()
-                responses = [np.nan]
-                for ii in range(len(response_sequence)-1):
-                    responses.append(response_sequence[ii+1] - response_sequence[ii])
-                data.loc[data['anon_thread_id'] == thread, 'used_response_time'] = responses
-            else:
-                data = data[data['anon_thread_id'] != thread]
-        else: 
-            data = data[data['anon_thread_id'] != thread]
+            concession_sequence = thread_sequence['concession'].tolist()
+            response_sequence = thread_sequence['response_time'].tolist()
 
-    return data, counter
-        
+            opponent_concession = [np.nan, np.nan, np.nan]
+            opponent_response = [np.nan, np.nan]
+            for ii in range(2, len(concession_sequence)):
+                if ii >= 3:
+                    opponent_concession.append(concession_sequence[ii-1])
+                opponent_response.append(response_sequence[ii-1])
 
-    
-    #data_grouped = data.groupby('anon_thread_id')
-    #print(data_grouped) 
+            thread_sequence['opp_concessions'] = opponent_concession
+            thread_sequence['opp_response_time'] = opponent_response
 
+            exit()
 
 if __name__ == '__main__':
-    
-    # Load the data
-    # exclude: buyer_us, byr_cntry_id, response_time, anon_slr_id, anon_byr_id
-    usecols = ['anon_thread_id', 
-                'offr_type_id', 
-                'status_id', 
-                'offr_price', 
-                'src_cre_date', 
-                'slr_hist', 
-                'byr_hist', 
-                'any_mssg', 
-                'fdbk_pstv_src', 
-                'fdbk_score_src']
+    chunksize = 10 ** 6
+    file_path = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed.csv')
 
-    chunksize = 10 ** 4
-    filename = os.path.join('datasets', 'ebay_data', 'anon_bo_threads.csv')
-    full_counter = 0
-
-    # Create empty header dataset 
-    header = pd.DataFrame(columns=['anon_thread_id', 
-                                   'fdbk_score_src', 
-                                   'fdbk_pstv_src', 
-                                   'offr_type_id',
-                                   'status_id', 
-                                   'offr_price', 
-                                   'src_cre_date', 
-                                   'slr_hist', 
-                                   'byr_hist',
-                                   'any_mssg', 
-                                   'concession', 
-                                   'used_response_time'])
-    processed_file_path = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed.csv')
-    header.to_csv(processed_file_path, mode='w', header=True, index=False)
-
-    for chunk in pd.read_csv(filename, chunksize=chunksize, usecols=usecols):
-        # Transform the data
-        data, counter = transform_data(chunk)
-
-        # Append to data file
-        data.to_csv(processed_file_path, mode='a', header=False, index=False)
-
-        # Count threads
-        full_counter += counter
-        print('Counter: {}'.format(full_counter))
-    print('Full counter: {}'.format(full_counter))
-
-    
+    for cc, chunk in enumerate(pd.read_csv(file_path, chunksize=chunksize, index_col=False, dtype={'src_cre_date': 'str', 'response_time': 'str'}, parse_dates=['src_cre_date', 'response_time', 'opp_response_time'])):
+        print('Chunk number {}'.format(cc))
+        transform_data(chunk)
