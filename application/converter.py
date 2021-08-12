@@ -3,6 +3,7 @@ import os
 import numpy as np
 import ray
 from filelock import FileLock
+from tqdm import tqdm
 
 
 @ray.remote
@@ -45,7 +46,8 @@ def transform_data(data):
     data_new = None
     counter = 0
     for tt, thread in enumerate(unique_threads):
-        print('Thread {} out of {}'.format(tt, n_unique_threads))
+        if tt % 10000 == 0:
+            print('Thread {} out of {}'.format(tt, n_unique_threads))
 
         # Get index of data for this thread
         thread_index = data.loc[data['anon_thread_id'] == thread].index.tolist()
@@ -54,7 +56,7 @@ def transform_data(data):
         thread_sequence = data.loc[thread_index, :]
 
         # Check if thread sequence is longer than 3
-        if len(thread_sequence) >= 3:             
+        if len(thread_sequence) >= 4:             
             # Sort by src_cre_date
             thread_sequence = thread_sequence.sort_values(by=['src_cre_date'])
             
@@ -74,11 +76,20 @@ def transform_data(data):
                 thread_sequence['opp_concessions'] = opp_concessions
                 thread_sequence['opp_response_time'] = opp_resonses
 
+                # Convert responses to seconds
+                thread_sequence['response_time'] = thread_sequence['response_time'].dt.total_seconds()
+                thread_sequence['opp_response_time'] = thread_sequence['opp_response_time'].dt.total_seconds()
+
+                # Extend experience value to all rows
+                thread_sequence['slr_hist'] = thread_sequence['slr_hist'].iloc[0]
+                thread_sequence['byr_hist'] = thread_sequence['byr_hist'].iloc[0]
+
                 # Add to new dataframe
                 if data_new is None: 
                     data_new = thread_sequence
                 else:
                     data_new = data_new.append(thread_sequence)
+
     return data_new, counter
         
 
@@ -109,7 +120,7 @@ if __name__ == '__main__':
     ray.init()
 
     # Load the data
-    # exclude: buyer_us, byr_cntry_id, response_time, anon_slr_id, anon_byr_id
+    # exclude: buyer_us, byr_cntry_id, response_time (because faulty), anon_slr_id, anon_byr_id
     usecols = ['anon_thread_id', 
                 'offr_type_id', 
                 'status_id', 
@@ -119,27 +130,31 @@ if __name__ == '__main__':
                 'byr_hist', 
                 'any_mssg', 
                 'fdbk_pstv_src', 
-                'fdbk_score_src']
+                'fdbk_score_src',
+                'anon_slr_id', 
+                'anon_byr_id']
 
-    chunksize = 10 ** 2#6
+    chunksize = 10 ** 6
     filename = os.path.join('datasets', 'ebay_data', 'anon_bo_threads.csv')
     full_counter = 0
 
     # Create empty header dataset 
     header = pd.DataFrame(columns=['anon_thread_id', 
-                                   'fdbk_score_src', 
+                                   'anon_byr_id', 
+                                   'anon_slr_id', 
+                                   'fdbk_score_src',
                                    'fdbk_pstv_src', 
-                                   'offr_type_id',
-                                   'status_id', 
-                                   'offr_price', 
-                                   'src_cre_date', 
-                                   'slr_hist', 
-                                   'byr_hist',
-                                   'any_mssg', 
-                                   'concession', 
-                                   'response_time',
-                                   'opp_concessions',
-                                   'opp_response_time'])
+                                    'offr_type_id', 
+                                    'status_id', 
+                                    'offr_price',
+                                    'src_cre_date', 
+                                    'slr_hist', 
+                                    'byr_hist', 
+                                    'any_mssg', 
+                                    'concessions',
+                                    'response_time', 
+                                    'opp_concessions', 
+                                    'opp_response_time'])
 
     # Create empty dataframe at destination
     processed_file_path = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed.csv')
