@@ -40,6 +40,29 @@ def visualize1d(model, true_samples: np.ndarray, device: str, path: str, obs: in
     print('Saved {} to {}'.format(path.split('/')[-1], path))
 
 
+def histogram(samples: np.ndarray, path: str, var_name: str, plt_name: str) -> None:
+    """Visualizes the true and predicted marginals.
+
+    Params:
+        marginal: kind of marginal distribution
+        model: DDSF model
+        epoch: epoch to use
+        args: passed input arguments
+        obs: number of observations to samples
+    """
+    fig = plt.figure(figsize=(8, 6))
+    sns.distplot(samples, bins=100, kde=False, norm_hist=True, color='royalblue')
+    plt.xlabel(var_name, fontsize=20)
+    plt.ylabel('relative frequency', fontsize=20)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    fig.tight_layout()
+    path = os.path.join(path, '{}.pdf'.format(plt_name))
+    fig.savefig(path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print('Saved {} to {}'.format(path.split('/')[-1], path))
+
+
 def visualize_joint(data: np.ndarray, figures_path: str, name: str, axis_1_name: str =None, axis_2_name: str =None) -> None:
     """Visualize 2D distribution as a seaborn jointplot.
     """
