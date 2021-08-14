@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     # Save processed data
     file_path_2 = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed_2.csv')
-    data.to_csv(file_path_2)
+    data.to_csv(file_path_2, index=False)
     
     # Read in data
     file_path_2 = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed_2.csv')
@@ -94,14 +94,12 @@ if __name__ == '__main__':
     #   - log(concession + 1)
     #   - log(opponent concession + 1)
     #   - log(offer price + 1)
-    #   - log(time since offer + 1)
     #   - offer counter
     #   - log(seller history + 1)
     #   - log(buyer history + 1)
     data_cons = data.filter(items=['log_concessions',
                                   'log_opp_concessions',
                                   'log_offr_price',
-                                  'log_time_since_offer',
                                   'offer_counter',
                                   'log_slr_hist',
                                   'log_byr_hist'])
