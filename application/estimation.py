@@ -57,9 +57,10 @@ if __name__ == '__main__':
                               'offer_counter',
                               'log_slr_hist', 
                               'log_byr_hist']).dropna()
-    data = data.head(100)
-    print(data.columns)
-    print(data.head())
+    data_small = data.head(10)
+    del data
+    print(data_small.columns)
+    print(data_small.head())
 
     # Training settings
     args = TrainOptions().parse()
@@ -81,13 +82,15 @@ if __name__ == '__main__':
 
     # Run the PC algorithm
     start = time.time()
-    pc_application(data, indep_test=resit, alpha=args.alpha_indep, 
+    pc_application(data_small, indep_test=resit, alpha=args.alpha_indep, 
             figures_path=args.figures_path, exp_name=args.exp_name,
            device=args.device, add_name='resit')
     end = time.time()
     print('Elapsed time: {}'.format(end - start))
 
     # Run the PC algorithm with the Flow-based independence test
+    args.epochs_m = 1
+    args.epochs_c = 1
     # kwargs marginal
     kwargs_m = {'n_layers': args.n_layers_m,
               'lr': args.lr_m,
@@ -127,7 +130,7 @@ if __name__ == '__main__':
         json.dump(args.__dict__, f, indent=2)
 
     start = time.time()
-    pc_application(data, indep_test=copula_indep_test, 
+    pc_application(data_small, indep_test=copula_indep_test, 
            alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
            kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
     end = time.time()

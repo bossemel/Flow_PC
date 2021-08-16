@@ -203,7 +203,7 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
 
     if visualize:
         # Plot copula samples
-        samples = cop_flow.sample_copula(1000, context=cond_set[:1000, :] if cond_set is not None else None).detach().cpu().numpy()
+        samples = cop_flow.sample_copula(np.min([1000, cond_set.shape[0]]) if cond_set is not None else 1000, context=cond_set[:1000, :] if cond_set is not None else None).detach().cpu().numpy()
         visualize_joint(samples, figures_path, name='cop_samples')
 
     print('Estimating mutual information..')
