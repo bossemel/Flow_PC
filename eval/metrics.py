@@ -3,38 +3,6 @@ import warnings
 from data_provider import Copula_Distr
 eps = 1e-7
 
-# def jsd_copula_context(pred_dist, true_dist, device: str, context: torch.Tensor, num_samples: int, cond_copula_distr: Copula_Distr) -> float:
-#     """Returns JS-Divergence of the predicted distribution and the true distribution
-#     """
-#     # Get ground truth
-#     samples_target = torch.from_numpy(true_dist.sample(num_samples=num_samples)) # @Todo: receck: need no context right?
-#     samples_pred = pred_dist.sample_copula(num_samples=num_samples, context=context) # @Todo: add context to data?
-
-#     # Prob X in both distributions
-#     prob_x_in_p = torch.exp(pred_dist.log_pdf_uniform(inputs=samples_pred.to(device), context=context.to(device))).to(device)
-#     prob_x_in_q = torch.from_numpy(true_dist.pdf(torch.cat([samples_pred, context], axis=1).cpu(), cond_copula_distr)).to(device) # @Todo: think about how to include contexts and where..
-
-#     # Prob Y in both distributions
-#     prob_y_in_p = torch.exp(pred_dist.log_pdf_uniform(inputs=samples_target[:, 0:2].to(device), context=samples_target[:, 2:4].to(device))).to(device)
-#     prob_y_in_q = torch.from_numpy(true_dist.pdf(samples_target, cond_copula_distr)).to(device)
-
-#     assert torch.min(prob_x_in_p) >= 0
-#     assert torch.min(prob_x_in_q) >= 0
-#     assert torch.min(prob_y_in_p) >= 0
-#     assert torch.min(prob_y_in_q) >= 0
-
-#     assert prob_x_in_p.shape == (num_samples,), '{}'.format(prob_x_in_p.shape)
-#     assert prob_x_in_q.shape == (num_samples,)
-#     assert prob_y_in_p.shape == (num_samples,)
-#     assert prob_y_in_q.shape == (num_samples,)
-
-#     divergence = js_divergence(prob_x_in_p=prob_x_in_p,
-#                                 prob_x_in_q=prob_x_in_q,
-#                                 prob_y_in_p=prob_y_in_p,
-#                                 prob_y_in_q=prob_y_in_q)
-
-#     return divergence
-
 
 def jsd_copula(pred_dist, true_dist, device: str, num_samples: int =100000):
     """Returns JS-Divergence of the predicted distribution and the true distribution

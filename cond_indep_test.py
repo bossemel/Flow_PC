@@ -157,7 +157,7 @@ def independence_test(mi: float, threshold: float =0.05):
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
                       cond_set: np.ndarray, exp_name: str, device: str, kwargs_m, kwargs_c, 
                       num_runs: int=30, batch_size_m: int =128, batch_size_c: int =128, num_workers: int =0,
-                      visualize=True) -> bool:
+                      visualize=False) -> bool:
 
     print('Estimating x marginal...')
     x_uni = marginal_transform(x_input, exp_name, device=device, **kwargs_m)

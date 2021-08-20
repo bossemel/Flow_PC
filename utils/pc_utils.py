@@ -195,7 +195,7 @@ class pcalg():
         return
 
 
-def resit(X, Y, Z, **kwargs): #kwargs_m, kwargs_c, exp_name, device):
+def resit(X, Y, Z, **kwargs):
     """
     Independently model X and Y as a
     function of Z using models that follow

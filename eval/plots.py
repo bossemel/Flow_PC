@@ -4,7 +4,6 @@ import torch
 import os
 import seaborn as sns
 import networkx as nx
-import pydot
 from networkx.drawing.nx_pydot import graphviz_layout
 
 
@@ -51,7 +50,7 @@ def histogram(samples: np.ndarray, path: str, var_name: str, plt_name: str) -> N
         obs: number of observations to samples
     """
     fig = plt.figure(figsize=(8, 6))
-    sns.distplot(samples, bins=100, kde=False, norm_hist=True, color='royalblue')
+    sns.distplot(samples, kde=False, norm_hist=True) #, color='royalblue')
     plt.xlabel(var_name, fontsize=20)
     plt.ylabel('relative frequency', fontsize=20)
     plt.xticks(fontsize=20)
