@@ -84,7 +84,7 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name: str, device: str, epochs
     return outputs
 
 
-def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, **kwargs) -> np.ndarray:
+def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, **kwargs) -> torch.Tensor:
     if inputs.ndim > 1:
         outputs = torch.empty_like(torch.from_numpy(inputs)).to(device).detach()
         for dim in range(inputs.shape[1]):
@@ -157,19 +157,25 @@ def independence_test(mi: float, threshold: float =0.05):
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
                       cond_set: np.ndarray, exp_name: str, device: str, kwargs_m, kwargs_c, 
                       num_runs: int=30, batch_size_m: int =128, batch_size_c: int =128, num_workers: int =0,
-                      visualize=False) -> bool:
+                      visualize=False, transform_marginals=True) -> bool:
 
-    print('Estimating x marginal...')
-    x_uni = marginal_transform(x_input, exp_name, device=device, **kwargs_m)
-    print('Estimating y marginal...')
-    y_uni = marginal_transform(y_input, exp_name, device=device, **kwargs_m)
+    if transform_marginals:
+        print('Estimating x marginal...')
+        x_input = marginal_transform(x_input, exp_name, device=device, **kwargs_m)
+        print('Estimating y marginal...')
+        y_input = marginal_transform(y_input, exp_name, device=device, **kwargs_m)
 
-    if cond_set is not None:
-        print('Estimating cond set marginals...')
-        cond_set = marginal_transform(cond_set, exp_name, device=device, **kwargs_m).float()
-        cond_set_dim = cond_set.shape[1]
+        if cond_set is not None:
+            print('Estimating cond set marginals...')
+            cond_set = marginal_transform(cond_set, exp_name, device=device, **kwargs_m).float()
+            cond_set_dim = cond_set.shape[1]
+        else:
+            cond_set_dim = None
     else:
-        cond_set_dim = None
+        x_input = torch.from_numpy(x_input).float().to(device)
+        y_input = torch.from_numpy(y_input).float().to(device)
+        cond_set = torch.from_numpy(cond_set).float().to(device) if cond_set is not None else None
+        cond_set_dim = cond_set.shape[1] if cond_set is not None else None
 
     if visualize:
         # Generate the directory names
@@ -177,7 +183,7 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
         figures_path = os.path.join(exp_path, 'figures')
         if not os.path.exists(figures_path):
             os.makedirs(figures_path)
-        inputs = torch.cat([x_uni[:1000, :], y_uni[:1000, :]], axis=1).cpu().numpy()
+        inputs = torch.cat([x_input[:1000, :], y_input[:1000, :]], axis=1).cpu().numpy()
         visualize_joint(inputs, figures_path, name='input_dataset')
         norm_distr = scipy.stats.norm()
         visualize_joint(norm_distr.cdf(inputs), figures_path, name='input_uni_dataset')
@@ -188,8 +194,8 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
 
     # Transform into data object
     print('Creating copula dataset..')
-    __, __, __, loader_train, loader_val, loader_test = split_data_copula(x_uni, 
-                                                                          y_uni,
+    __, __, __, loader_train, loader_val, loader_test = split_data_copula(x_input, 
+                                                                          y_input,
                                                                           cond_set, 
                                                                           batch_size=128, 
                                                                           num_workers=0, 
@@ -203,7 +209,8 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
 
     if visualize:
         # Plot copula samples
-        samples = cop_flow.sample_copula(np.min([1000, cond_set.shape[0]]) if cond_set is not None else 1000, context=cond_set[:1000, :] if cond_set is not None else None).detach().cpu().numpy()
+        samples = cop_flow.sample_copula(np.min([1000, cond_set.shape[0]]) if cond_set is not None else 1000, 
+                                         context=cond_set[:1000, :] if cond_set is not None else None).detach().cpu().numpy()
         visualize_joint(samples, figures_path, name='cop_samples')
 
     print('Estimating mutual information..')

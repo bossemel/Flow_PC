@@ -13,7 +13,7 @@ import networkx as nx
 from pc import pc_estimator
 from utils.pc_utils import resit
 from eval.plots import plot_graph, visualize_joint
-from cond_indep_test import copula_indep_test
+from cond_indep_test import copula_indep_test, marginal_transform
 
 
 def pc_application(input_dataset: pd.DataFrame, indep_test, alpha, device, exp_name, 
@@ -38,7 +38,282 @@ def pc_application(input_dataset: pd.DataFrame, indep_test, alpha, device, exp_n
     plot_graph(undirected_graph, os.path.join(figures_path, add_name + 'est_graph.pdf'))
 
 
-def reciprocity_exp(data):
+def reciprocity_exp(data, obs, test=False):
+    data = data.filter(items=['log_concessions_by_offr_price', 
+                              'log_opp_concessions_by_offr_price',
+                              'offer_counter',
+                              'log_hist',
+                              'log_opp_hist']).dropna()
+
+    data_small = data.sample(obs)
+    del data
+    print(data_small.columns)
+    print(data_small.head())
+
+    # Training settings
+    args = TrainOptions().parse()
+    args.exp_name = 'ebay_pc_recipr'
+    args.flow_name = 'resit'
+    args.alpha_indep = 0.05
+
+    # Create Folders
+    args = create_folders(args)
+    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
+        json.dump(args.__dict__, f, indent=2)
+
+    # Cuda settings
+    use_cuda = torch.cuda.is_available()
+    args.device = torch.cuda.current_device()
+
+    # Set Seed
+    set_seeds(seed=args.seed, use_cuda=use_cuda)
+
+    # Run the PC algorithm
+    start = time.time()
+    pc_application(data_small, indep_test=resit, alpha=args.alpha_indep, 
+            figures_path=args.figures_path, exp_name=args.exp_name,
+           device=args.device, add_name='resit')
+    end = time.time()
+    print('Elapsed time: {}'.format(end - start))
+
+    # Run the PC algorithm with the Flow-based independence test
+    if test:
+        args.epochs_m = 1
+        args.epochs_c = 1
+    # kwargs marginal
+    kwargs_m = {'n_layers': args.n_layers_m,
+              'lr': args.lr_m,
+              'weight_decay': args.weight_decay_m,
+              'amsgrad': args.amsgrad_m,
+              'n_bins': args.n_bins_m,
+              'tail_bound': args.tail_bound_m,
+              'hidden_units': args.hidden_units_m,
+              'tails': args.tails_m,
+              'identity_init': args.identity_init_m,
+              'epochs': args.epochs_m}
+
+    # kwargs copula
+    kwargs_c = {'n_layers': args.n_layers_c,
+              'lr': args.lr_c,
+              'weight_decay': args.weight_decay_c,
+              'amsgrad': args.amsgrad_c,
+              'n_bins': args.n_bins_c,
+              'tail_bound': args.tail_bound_c,
+              'hidden_units': args.hidden_units_m,
+              'tails': args.tails_m,
+              'identity_init': args.identity_init_m,
+              'epochs': args.epochs_c,
+              'n_blocks': args.n_blocks_c,
+              'dropout': args.dropout_c,
+              'use_batch_norm': args.batch_norm_c,
+              'unconditional_transform': args.unconditional_transform_c}
+
+    # Create new folders
+    args.exp_name = 'exp_pc'
+    args.flow_name = 'cop_flow'
+    args.alpha_indep = 0.05
+
+    # Create Folders
+    args = create_folders(args)
+    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
+        json.dump(args.__dict__, f, indent=2)
+
+    start = time.time()
+    # Transform marginals 
+    data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), args.exp_name, device=args.device, **kwargs_m).float().detach().cpu().numpy())
+
+    pc_application(data_small, indep_test=copula_indep_test, 
+           alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
+           kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
+    end = time.time()
+    print('Elapsed time: {}'.format(end - start))
+
+
+def timing_exp(data, obs, test=False):
+    data = data.filter(items=['log_concessions_by_offr_price', 
+                              'log_opp_concessions_by_offr_price'
+                              'offer_counter',
+                              'log_response_time', 
+                              'log_opp_response_time']).dropna()
+    data_small = data.sample(obs)
+    del data
+    print(data_small.columns)
+    print(data_small.head())
+
+    # Training settings
+    args = TrainOptions().parse()
+    args.exp_name = 'ebay_pc_timing'
+    args.flow_name = 'resit'
+    args.alpha_indep = 0.05
+
+    # Create Folders
+    args = create_folders(args)
+    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
+        json.dump(args.__dict__, f, indent=2)
+
+    # Cuda settings
+    use_cuda = torch.cuda.is_available()
+    args.device = torch.cuda.current_device()
+
+    # Set Seed
+    set_seeds(seed=args.seed, use_cuda=use_cuda)
+
+    # Run the PC algorithm
+    start = time.time()
+    pc_application(data_small, indep_test=resit, alpha=args.alpha_indep, 
+            figures_path=args.figures_path, exp_name=args.exp_name,
+           device=args.device, add_name='resit')
+    end = time.time()
+    print('Elapsed time: {}'.format(end - start))
+
+    # Run the PC algorithm with the Flow-based independence test
+    if test:
+        args.epochs_m = 1
+        args.epochs_c = 1
+    # kwargs marginal
+    kwargs_m = {'n_layers': args.n_layers_m,
+              'lr': args.lr_m,
+              'weight_decay': args.weight_decay_m,
+              'amsgrad': args.amsgrad_m,
+              'n_bins': args.n_bins_m,
+              'tail_bound': args.tail_bound_m,
+              'hidden_units': args.hidden_units_m,
+              'tails': args.tails_m,
+              'identity_init': args.identity_init_m,
+              'epochs': args.epochs_m}
+
+    # kwargs copula
+    kwargs_c = {'n_layers': args.n_layers_c,
+              'lr': args.lr_c,
+              'weight_decay': args.weight_decay_c,
+              'amsgrad': args.amsgrad_c,
+              'n_bins': args.n_bins_c,
+              'tail_bound': args.tail_bound_c,
+              'hidden_units': args.hidden_units_m,
+              'tails': args.tails_m,
+              'identity_init': args.identity_init_m,
+              'epochs': args.epochs_c,
+              'n_blocks': args.n_blocks_c,
+              'dropout': args.dropout_c,
+              'use_batch_norm': args.batch_norm_c,
+              'unconditional_transform': args.unconditional_transform_c}
+
+    # Create new folders
+    args.exp_name = 'exp_pc'
+    args.flow_name = 'cop_flow'
+    args.alpha_indep = 0.05
+
+    # Create Folders
+    args = create_folders(args)
+    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
+        json.dump(args.__dict__, f, indent=2)
+
+    start = time.time()
+    pc_application(data_small, indep_test=copula_indep_test, 
+           alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
+           kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
+    end = time.time()
+    print('Elapsed time: {}'.format(end - start))
+
+
+def reciprocity_t4_exp(data, obs, test=False):
+    data = data.filter(items=['log_concessions_by_offr_price', 
+                              'log_opp_concessions_by_offr_price',
+                              'offer_counter',
+                              'log_hist',
+                              'log_opp_hist']).dropna()
+
+    data = data[data['offer_counter'] >= 4]
+
+    data_small = data.sample(obs)
+    del data
+    print(data_small.columns)
+    print(data_small.head())
+
+    # Training settings
+    args = TrainOptions().parse()
+    args.exp_name = 'ebay_pc_recipr_t4'
+    args.flow_name = 'resit'
+    args.alpha_indep = 0.05
+
+    # Create Folders
+    args = create_folders(args)
+    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
+        json.dump(args.__dict__, f, indent=2)
+
+    # Cuda settings
+    use_cuda = torch.cuda.is_available()
+    args.device = torch.cuda.current_device()
+
+    # Set Seed
+    set_seeds(seed=args.seed, use_cuda=use_cuda)
+
+    # Run the PC algorithm
+    start = time.time()
+    pc_application(data_small, indep_test=resit, alpha=args.alpha_indep, 
+            figures_path=args.figures_path, exp_name=args.exp_name,
+           device=args.device, add_name='resit')
+    end = time.time()
+    print('Elapsed time: {}'.format(end - start))
+
+    # Run the PC algorithm with the Flow-based independence test
+    if test:
+        args.epochs_m = 1
+        args.epochs_c = 1
+    # kwargs marginal
+    kwargs_m = {'n_layers': args.n_layers_m,
+              'lr': args.lr_m,
+              'weight_decay': args.weight_decay_m,
+              'amsgrad': args.amsgrad_m,
+              'n_bins': args.n_bins_m,
+              'tail_bound': args.tail_bound_m,
+              'hidden_units': args.hidden_units_m,
+              'tails': args.tails_m,
+              'identity_init': args.identity_init_m,
+              'epochs': args.epochs_m}
+
+    # kwargs copula
+    kwargs_c = {'n_layers': args.n_layers_c,
+              'lr': args.lr_c,
+              'weight_decay': args.weight_decay_c,
+              'amsgrad': args.amsgrad_c,
+              'n_bins': args.n_bins_c,
+              'tail_bound': args.tail_bound_c,
+              'hidden_units': args.hidden_units_m,
+              'tails': args.tails_m,
+              'identity_init': args.identity_init_m,
+              'epochs': args.epochs_c,
+              'n_blocks': args.n_blocks_c,
+              'dropout': args.dropout_c,
+              'use_batch_norm': args.batch_norm_c,
+              'unconditional_transform': args.unconditional_transform_c}
+
+    # Create new folders
+    args.exp_name = 'exp_pc'
+    args.flow_name = 'cop_flow'
+    args.alpha_indep = 0.05
+
+    # Create Folders
+    args = create_folders(args)
+    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
+        json.dump(args.__dict__, f, indent=2)
+
+    start = time.time()
+    # Transform marginals 
+    data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), args.exp_name, device=args.device, **kwargs_m).float().detach().cpu().numpy())
+
+    pc_application(data_small, indep_test=copula_indep_test, 
+           alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
+           kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
+    end = time.time()
+    print('Elapsed time: {}'.format(end - start))
+
+
+if __name__ == '__main__':
+ 
+    # Load dataset
+    file_path_cons = os.path.join('datasets', 'ebay_data', 'consessions_subset.csv')
+    data = pd.read_csv(file_path_cons) 
     
     data['log_concessions_by_offr_price'] = data['log_concessions'] - data['log_offr_price']
     data['log_opp_concessions_by_offr_price'] = data['log_opp_concessions'] - data['log_offr_price']
@@ -52,200 +327,11 @@ def reciprocity_exp(data):
     data.loc[slr_rows, 'log_hist'] = data.loc[slr_rows, 'log_slr_hist']
     data.loc[slr_rows, 'log_opp_hist'] = data.loc[slr_rows, 'log_byr_hist']
 
-    data = data.filter(items=['log_concessions_by_offr_price', 
-                              'log_opp_concessions_by_offr_price',
-                              'offer_counter',
-                              'log_hist', 
-                              'log_opp_hist']).dropna()
+    data['log_hist'] = data['log_hist'].astype('float')
+    data['log_opp_hist'] = data['log_opp_hist'].astype('float')
 
-    obs = 100
-    data_small = data.sample(obs)
-    del data
-    print(data_small.columns)
-    print(data_small.head())
-
-    # Training settings
-    args = TrainOptions().parse()
-    args.exp_name = 'ebay_pc'
-    args.flow_name = 'resit'
-    args.alpha_indep = 0.05
-
-    # Create Folders
-    args = create_folders(args)
-    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
-        json.dump(args.__dict__, f, indent=2)
-
-    # Cuda settings
-    use_cuda = torch.cuda.is_available()
-    args.device = torch.cuda.current_device()
-
-    # Set Seed
-    set_seeds(seed=args.seed, use_cuda=use_cuda)
-
-    # Run the PC algorithm
-    start = time.time()
-    pc_application(data_small, indep_test=resit, alpha=args.alpha_indep, 
-            figures_path=args.figures_path, exp_name=args.exp_name,
-           device=args.device, add_name='resit')
-    end = time.time()
-    print('Elapsed time: {}'.format(end - start))
-
-    # Run the PC algorithm with the Flow-based independence test
-    args.epochs_m = 1
-    args.epochs_c = 1
-    # kwargs marginal
-    kwargs_m = {'n_layers': args.n_layers_m,
-              'lr': args.lr_m,
-              'weight_decay': args.weight_decay_m,
-              'amsgrad': args.amsgrad_m,
-              'n_bins': args.n_bins_m,
-              'tail_bound': args.tail_bound_m,
-              'hidden_units': args.hidden_units_m,
-              'tails': args.tails_m,
-              'identity_init': args.identity_init_m,
-              'epochs': args.epochs_m}
-
-    # kwargs copula
-    kwargs_c = {'n_layers': args.n_layers_c,
-              'lr': args.lr_c,
-              'weight_decay': args.weight_decay_c,
-              'amsgrad': args.amsgrad_c,
-              'n_bins': args.n_bins_c,
-              'tail_bound': args.tail_bound_c,
-              'hidden_units': args.hidden_units_m,
-              'tails': args.tails_m,
-              'identity_init': args.identity_init_m,
-              'epochs': args.epochs_c,
-              'n_blocks': args.n_blocks_c,
-              'dropout': args.dropout_c,
-              'use_batch_norm': args.batch_norm_c,
-              'unconditional_transform': args.unconditional_transform_c}
-
-    # Create new folders
-    args.exp_name = 'exp_pc'
-    args.flow_name = 'cop_flow'
-    args.alpha_indep = 0.05
-
-    # Create Folders
-    args = create_folders(args)
-    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
-        json.dump(args.__dict__, f, indent=2)
-
-    start = time.time()
-    pc_application(data_small, indep_test=copula_indep_test, 
-           alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
-           kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
-    end = time.time()
-    print('Elapsed time: {}'.format(end - start))
-
-
-def timing_exp(data):
-    
-    data['log_concessions_by_offr_price'] = data['log_concessions'] - data['log_offr_price']
-    data['log_opp_concessions_by_offr_price'] = data['log_opp_concessions'] - data['log_offr_price']
-
-    # data['log_hist'] = None
-    # data['log_opp_hist'] = None
-    # byr_rows = data['offer_counter'] % 2 != 0
-    # slr_rows = data['offer_counter'] % 2 == 0
-    # data.loc[byr_rows, 'log_hist'] = data.loc[byr_rows, 'log_byr_hist']
-    # data.loc[byr_rows, 'log_opp_hist'] = data.loc[byr_rows, 'log_slr_hist']
-    # data.loc[slr_rows, 'log_hist'] = data.loc[slr_rows, 'log_slr_hist']
-    # data.loc[slr_rows, 'log_opp_hist'] = data.loc[slr_rows, 'log_byr_hist']
-
-    data = data.filter(items=['log_concessions_by_offr_price', 
-                              'log_opp_concessions_by_offr_price',
-                              'offer_counter',
-                              'log_response_time', 
-                              'log_opp_response_time']).dropna()
-
-    obs = 100
-    data_small = data.sample(obs)
-    del data
-    print(data_small.columns)
-    print(data_small.head())
-
-    # Training settings
-    args = TrainOptions().parse()
-    args.exp_name = 'ebay_pc'
-    args.flow_name = 'resit'
-    args.alpha_indep = 0.05
-
-    # Create Folders
-    args = create_folders(args)
-    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
-        json.dump(args.__dict__, f, indent=2)
-
-    # Cuda settings
-    use_cuda = torch.cuda.is_available()
-    args.device = torch.cuda.current_device()
-
-    # Set Seed
-    set_seeds(seed=args.seed, use_cuda=use_cuda)
-
-    # Run the PC algorithm
-    start = time.time()
-    pc_application(data_small, indep_test=resit, alpha=args.alpha_indep, 
-            figures_path=args.figures_path, exp_name=args.exp_name,
-           device=args.device, add_name='resit')
-    end = time.time()
-    print('Elapsed time: {}'.format(end - start))
-
-    # Run the PC algorithm with the Flow-based independence test
-    args.epochs_m = 1
-    args.epochs_c = 1
-    # kwargs marginal
-    kwargs_m = {'n_layers': args.n_layers_m,
-              'lr': args.lr_m,
-              'weight_decay': args.weight_decay_m,
-              'amsgrad': args.amsgrad_m,
-              'n_bins': args.n_bins_m,
-              'tail_bound': args.tail_bound_m,
-              'hidden_units': args.hidden_units_m,
-              'tails': args.tails_m,
-              'identity_init': args.identity_init_m,
-              'epochs': args.epochs_m}
-
-    # kwargs copula
-    kwargs_c = {'n_layers': args.n_layers_c,
-              'lr': args.lr_c,
-              'weight_decay': args.weight_decay_c,
-              'amsgrad': args.amsgrad_c,
-              'n_bins': args.n_bins_c,
-              'tail_bound': args.tail_bound_c,
-              'hidden_units': args.hidden_units_m,
-              'tails': args.tails_m,
-              'identity_init': args.identity_init_m,
-              'epochs': args.epochs_c,
-              'n_blocks': args.n_blocks_c,
-              'dropout': args.dropout_c,
-              'use_batch_norm': args.batch_norm_c,
-              'unconditional_transform': args.unconditional_transform_c}
-
-    # Create new folders
-    args.exp_name = 'exp_pc'
-    args.flow_name = 'cop_flow'
-    args.alpha_indep = 0.05
-
-    # Create Folders
-    args = create_folders(args)
-    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
-        json.dump(args.__dict__, f, indent=2)
-
-    start = time.time()
-    pc_application(data_small, indep_test=copula_indep_test, 
-           alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
-           kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
-    end = time.time()
-    print('Elapsed time: {}'.format(end - start))
-
-
-
-
-if __name__ == '__main__':
- 
-    # Load dataset
-    file_path_cons = os.path.join('datasets', 'ebay_data', 'consessions_subset.csv')
-    data = pd.read_csv(file_path_cons)
-    
-    reciprocity_exp(data)
+    obs = 10000
+    test = True
+    reciprocity_exp(data, obs, test=test)
+    reciprocity_t4_exp(data, obs, test=test)
+    timing_exp(data, obs, test=test)

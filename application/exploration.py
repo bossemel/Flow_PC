@@ -102,7 +102,9 @@ if __name__ == '__main__':
                                   'log_offr_price',
                                   'offer_counter',
                                   'log_slr_hist',
-                                  'log_byr_hist'])
+                                  'log_byr_hist',
+                                  'log_response_time',
+                                  'log_opp_response_time'])
 
     # Save dataset
     file_path_cons = os.path.join('datasets', 'ebay_data', 'consessions_subset.csv')

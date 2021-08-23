@@ -105,9 +105,10 @@ class pcalg():
                 if len(x_neighbors) >= level:
                     cont = True
                     for z in combinations(x_neighbors, level):
-                        pvalue = indep_test(self.dataset[:,x],
-                                            self.dataset[:,y],
+                        pvalue = indep_test(self.dataset[:,x:x+1],
+                                            self.dataset[:,y:y+1],
                                             self.dataset[:,z] if len(z) > 1 else None,
+                                            transform_marginals=False,
                                             kwargs_m=self.kwargs_m,
                                             kwargs_c=self.kwargs_c,
                                             exp_name='{}_{}_{}'.format(x,y,z),
@@ -209,6 +210,8 @@ def resit(X, Y, Z, **kwargs):
 
     http://jmlr.org/papers/volume15/peters14a/peters14a.pdf
     """
+    X = X.reshape(-1, )
+    Y = Y.reshape(-1, )
     sklearn_model = LinearRegression()
     if Z is not None:
         Z = Z.reshape(Z.shape[0], Z.shape[1])
