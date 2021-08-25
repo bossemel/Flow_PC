@@ -79,6 +79,17 @@ if __name__ == '__main__':
     plots_path = os.path.join('results', 'ebay', 'exploratory')
     Path(plots_path).mkdir(parents=True, exist_ok=True)
 
+    # Crete own and opponent history
+    data['log_hist'] = None
+    data['log_opp_hist'] = None
+    byr_rows = data['offer_counter'] % 2 != 0
+    slr_rows = data['offer_counter'] % 2 == 0
+    data.loc[byr_rows, 'log_hist'] = data.loc[byr_rows, 'log_byr_hist']
+    data.loc[byr_rows, 'log_opp_hist'] = data.loc[byr_rows, 'log_slr_hist']
+    data.loc[slr_rows, 'log_hist'] = data.loc[slr_rows, 'log_slr_hist']
+    data.loc[slr_rows, 'log_opp_hist'] = data.loc[slr_rows, 'log_byr_hist']
+
+
     histogram(data['log_concessions'], path=plots_path, var_name='log(concession + 1)', plt_name='concession')
     histogram(data['log_opp_concessions'], path=plots_path, var_name='log(opponent concession + 1)', plt_name='opponent_concession')
     histogram(data['log_offr_price'], path=plots_path, var_name='log(offer price + 1)', plt_name='offer_price')
@@ -86,25 +97,28 @@ if __name__ == '__main__':
     histogram(data['log_opp_response_time'], path=plots_path, var_name='log(opponent response time + 1)', plt_name='opponent_response_time')
     histogram(data['log_time_since_offer'], path=plots_path, var_name='log(time since offer + 1)', plt_name='time_since_offer')
     histogram(data['offer_counter'], path=plots_path, var_name='offer counter', plt_name='offer_counter')
-    histogram(data['log_slr_hist'], path=plots_path, var_name='log(seller history + 1)', plt_name='seller_history')
-    histogram(data['log_byr_hist'], path=plots_path, var_name='log(buyer history + 1)', plt_name='buyer_history')
-
+    histogram(data['log_hist'], path=plots_path, var_name='log(history + 1)', plt_name='history')
+    histogram(data['log_opp_hist'], path=plots_path, var_name='log(opponent history + 1)', plt_name='opponent_history')
     
     # Create dataset with  
     #   - log(concession + 1)
     #   - log(opponent concession + 1)
     #   - log(offer price + 1)
     #   - offer counter
-    #   - log(seller history + 1)
-    #   - log(buyer history + 1)
+    #   - log(history + 1)
+    #   - log(opponent history + 1)
     data_cons = data.filter(items=['log_concessions',
                                   'log_opp_concessions',
                                   'log_offr_price',
                                   'offer_counter',
-                                  'log_slr_hist',
-                                  'log_byr_hist',
+                                  'log_hist',
+                                  'log_opp_hist',
                                   'log_response_time',
-                                  'log_opp_response_time'])
+                                  'log_opp_response_time',
+                                  'log_time_since_offer'])
+
+    data['log_concessions_by_offr_price'] = data['log_concessions'] - data['log_offr_price']
+    data['log_opp_concessions_by_offr_price'] = data['log_opp_concessions'] - data['log_offr_price']
 
     # Save dataset
     file_path_cons = os.path.join('datasets', 'ebay_data', 'consessions_subset.csv')

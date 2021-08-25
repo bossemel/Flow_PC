@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from options import TrainOptions
-from utils import create_folders
+from utils import HiddenPrints, create_folders
 import torch
 import json
 import os 
@@ -14,6 +14,7 @@ from pc import pc_estimator
 from utils.pc_utils import resit
 from eval.plots import plot_graph, visualize_joint
 from cond_indep_test import copula_indep_test, marginal_transform
+from utils import HiddenPrints
 
 
 def pc_application(input_dataset: pd.DataFrame, indep_test, alpha, device, exp_name, 
@@ -41,7 +42,7 @@ def pc_application(input_dataset: pd.DataFrame, indep_test, alpha, device, exp_n
 def reciprocity_exp(data, obs, test=False):
     data = data.filter(items=['log_concessions_by_offr_price', 
                               'log_opp_concessions_by_offr_price',
-                              'offer_counter',
+                              #'offer_counter',
                               'log_hist',
                               'log_opp_hist']).dropna()
 
@@ -109,7 +110,7 @@ def reciprocity_exp(data, obs, test=False):
               'unconditional_transform': args.unconditional_transform_c}
 
     # Create new folders
-    args.exp_name = 'exp_pc'
+    args.exp_name = 'ebay_pc_recipr'
     args.flow_name = 'cop_flow'
     args.alpha_indep = 0.05
 
@@ -119,8 +120,21 @@ def reciprocity_exp(data, obs, test=False):
         json.dump(args.__dict__, f, indent=2)
 
     start = time.time()
-    # Transform marginals 
-    data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), args.exp_name, device=args.device, **kwargs_m).float().detach().cpu().numpy())
+
+    transform = True
+    if transform:
+        # Transform marginals 
+        print('Starting marginal transform')
+        with HiddenPrints():
+            columns = data_small.columns
+            data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), args.exp_name, device=args.device, disable_tqdm=True, **kwargs_m).float().detach().cpu().numpy(),
+                                        columns=columns)
+        
+        # Save transformed dataset
+        data_small.to_csv(os.path.join(args.experiment_logs, 'transformed_data_small.csv'), index=False)
+
+    # Load the transformed dataset
+    data_small = pd.read_csv(os.path.join(args.experiment_logs, 'transformed_data_small.csv'))
 
     pc_application(data_small, indep_test=copula_indep_test, 
            alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
@@ -132,9 +146,11 @@ def reciprocity_exp(data, obs, test=False):
 def timing_exp(data, obs, test=False):
     data = data.filter(items=['log_concessions_by_offr_price', 
                               'log_opp_concessions_by_offr_price'
-                              'offer_counter',
+                              #'offer_counter',
                               'log_response_time', 
-                              'log_opp_response_time']).dropna()
+                              'log_opp_response_time',
+                              'log_hist', 
+                              'log_opp_hist']).dropna()
     data_small = data.sample(obs)
     del data
     print(data_small.columns)
@@ -199,7 +215,7 @@ def timing_exp(data, obs, test=False):
               'unconditional_transform': args.unconditional_transform_c}
 
     # Create new folders
-    args.exp_name = 'exp_pc'
+    args.exp_name = 'ebay_pc_timing'
     args.flow_name = 'cop_flow'
     args.alpha_indep = 0.05
 
@@ -209,6 +225,22 @@ def timing_exp(data, obs, test=False):
         json.dump(args.__dict__, f, indent=2)
 
     start = time.time()
+
+    transform = True
+    if transform:
+        # Transform marginals 
+        print('Starting marginal transform')
+        with HiddenPrints():
+            columns = data_small.columns
+            data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), args.exp_name, device=args.device, disable_tqdm=True, **kwargs_m).float().detach().cpu().numpy(),
+                                        columns=columns)
+        
+        # Save transformed dataset
+        data_small.to_csv(os.path.join(args.experiment_logs, 'transformed_data_small.csv'), index=False)
+
+    # Load the transformed dataset
+    data_small = pd.read_csv(os.path.join(args.experiment_logs, 'transformed_data_small.csv'))
+
     pc_application(data_small, indep_test=copula_indep_test, 
            alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
            kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
@@ -219,7 +251,7 @@ def timing_exp(data, obs, test=False):
 def reciprocity_t4_exp(data, obs, test=False):
     data = data.filter(items=['log_concessions_by_offr_price', 
                               'log_opp_concessions_by_offr_price',
-                              'offer_counter',
+                              #'offer_counter',
                               'log_hist',
                               'log_opp_hist']).dropna()
 
@@ -289,7 +321,7 @@ def reciprocity_t4_exp(data, obs, test=False):
               'unconditional_transform': args.unconditional_transform_c}
 
     # Create new folders
-    args.exp_name = 'exp_pc'
+    args.exp_name = 'ebay_pc_recipr_t4'
     args.flow_name = 'cop_flow'
     args.alpha_indep = 0.05
 
@@ -299,8 +331,21 @@ def reciprocity_t4_exp(data, obs, test=False):
         json.dump(args.__dict__, f, indent=2)
 
     start = time.time()
-    # Transform marginals 
-    data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), args.exp_name, device=args.device, **kwargs_m).float().detach().cpu().numpy())
+
+    transform = True
+    if transform:
+        # Transform marginals 
+        print('Starting marginal transform')
+        with HiddenPrints():
+            columns = data_small.columns
+            data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), args.exp_name, device=args.device, disable_tqdm=True, **kwargs_m).float().detach().cpu().numpy(),
+                                        columns=columns)
+        
+        # Save transformed dataset
+        data_small.to_csv(os.path.join(args.experiment_logs, 'transformed_data_small.csv'), index=False)
+
+    # Load the transformed dataset
+    data_small = pd.read_csv(os.path.join(args.experiment_logs, 'transformed_data_small.csv'))
 
     pc_application(data_small, indep_test=copula_indep_test, 
            alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
@@ -313,25 +358,18 @@ if __name__ == '__main__':
  
     # Load dataset
     file_path_cons = os.path.join('datasets', 'ebay_data', 'consessions_subset.csv')
-    data = pd.read_csv(file_path_cons) 
+    data = pd.read_csv(file_path_cons, index_col=0)
     
-    data['log_concessions_by_offr_price'] = data['log_concessions'] - data['log_offr_price']
-    data['log_opp_concessions_by_offr_price'] = data['log_opp_concessions'] - data['log_offr_price']
-
-    data['log_hist'] = None
-    data['log_opp_hist'] = None
-    byr_rows = data['offer_counter'] % 2 != 0
-    slr_rows = data['offer_counter'] % 2 == 0
-    data.loc[byr_rows, 'log_hist'] = data.loc[byr_rows, 'log_byr_hist']
-    data.loc[byr_rows, 'log_opp_hist'] = data.loc[byr_rows, 'log_slr_hist']
-    data.loc[slr_rows, 'log_hist'] = data.loc[slr_rows, 'log_slr_hist']
-    data.loc[slr_rows, 'log_opp_hist'] = data.loc[slr_rows, 'log_byr_hist']
-
     data['log_hist'] = data['log_hist'].astype('float')
     data['log_opp_hist'] = data['log_opp_hist'].astype('float')
+    data['log_concessions_by_offr_price'] = data['log_concessions_by_offr_price'].astype('float')
+    data['log_opp_concessions_by_offr_price'] = data['log_opp_concessions_by_offr_price'].astype('float')
+    data['offer_counter'] = data['offer_counter'].astype('float')
 
     obs = 10000
-    test = True
+    test = False
+    print(data.head())
+    exit()
     reciprocity_exp(data, obs, test=test)
     reciprocity_t4_exp(data, obs, test=test)
     timing_exp(data, obs, test=test)

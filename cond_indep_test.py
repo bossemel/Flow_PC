@@ -46,7 +46,7 @@ def marginal_estimator(loader_train: torch.utils.data.DataLoader, loader_val: to
 
 
 def marginal_transform_1d(inputs: np.ndarray, exp_name: str, device: str, epochs: int =100, batch_size: int =128, 
-                          num_workers: int =0, variable_num: int =0, **kwargs) -> np.ndarray:
+                          num_workers: int =0, variable_num: int =0, disable_tqdm=False, **kwargs) -> np.ndarray:
     # Transform into data object
     data_train_scaled, data_val_scaled, data_test_scaled, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
                                                                                                                       batch_size, 
@@ -61,7 +61,8 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name: str, device: str, epochs
                                             epochs=epochs, 
                                             batch_size=batch_size, 
                                             num_workers=num_workers, 
-                                            variable_num=variable_num, 
+                                            variable_num=variable_num,
+                                            disable_tqdm=disable_tqdm,
                                             **kwargs)
 
     # 
@@ -84,7 +85,7 @@ def marginal_transform_1d(inputs: np.ndarray, exp_name: str, device: str, epochs
     return outputs
 
 
-def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, **kwargs) -> torch.Tensor:
+def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, disable_tqdm=False, **kwargs) -> torch.Tensor:
     if inputs.ndim > 1:
         outputs = torch.empty_like(torch.from_numpy(inputs)).to(device).detach()
         for dim in range(inputs.shape[1]):
@@ -92,10 +93,11 @@ def marginal_transform(inputs: np.ndarray, exp_name: str, device: str, **kwargs)
                                                              exp_name=exp_name,
                                                              device=device,
                                                              variable_num=dim,
+                                                             disable_tqdm=disable_tqdm,
                                                              **kwargs).reshape(-1, 1).detach()
     elif inputs.ndim == 1:
         outputs = marginal_transform_1d(inputs=inputs.reshape(-1,1),  exp_name=exp_name,
-                                        device=device, **kwargs).reshape(-1, 1).detach()
+                                        device=device, disable_tqdm=disable_tqdm, **kwargs).reshape(-1, 1).detach()
     else:
         raise ValueError('Invalid input shape.')
     return outputs
@@ -157,13 +159,13 @@ def independence_test(mi: float, threshold: float =0.05):
 def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
                       cond_set: np.ndarray, exp_name: str, device: str, kwargs_m, kwargs_c, 
                       num_runs: int=30, batch_size_m: int =128, batch_size_c: int =128, num_workers: int =0,
-                      visualize=False, transform_marginals=True) -> bool:
+                      visualize=False, transform_marginals=True, disable_tqdm=False) -> bool:
 
     if transform_marginals:
         print('Estimating x marginal...')
-        x_input = marginal_transform(x_input, exp_name, device=device, **kwargs_m)
+        x_input = marginal_transform(x_input, exp_name, device=device, disable_tqdm=disable_tqdm, **kwargs_m)
         print('Estimating y marginal...')
-        y_input = marginal_transform(y_input, exp_name, device=device, **kwargs_m)
+        y_input = marginal_transform(y_input, exp_name, device=device, disable_tqdm=disable_tqdm, **kwargs_m)
 
         if cond_set is not None:
             print('Estimating cond set marginals...')
@@ -204,7 +206,7 @@ def copula_indep_test(x_input: np.ndarray, y_input: np.ndarray,
     print('Estimating copula..')
     experiment, __, test_metrics = copula_estimator(loader_train, loader_val, loader_test, cond_set_dim=cond_set_dim, 
                                           exp_name=exp_name, device=device, batch_size=batch_size_c, 
-                                          num_workers=num_workers, **kwargs_c)
+                                          num_workers=num_workers, disable_tqdm=disable_tqdm, **kwargs_c)
     cop_flow = experiment.model
 
     if visualize:

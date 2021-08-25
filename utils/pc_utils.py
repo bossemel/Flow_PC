@@ -1,4 +1,5 @@
 # @Todo: cite https://github.com/jygerardy/causality/blob/master/examples/PCalg.ipynb
+from utils import HiddenPrints
 import numpy as np
 import functools
 import networkx as nx
@@ -11,6 +12,7 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 from sklearn.feature_selection import mutual_info_regression
 import os 
+from utils import HiddenPrints
 
 
 def check_dataset(dataset):
@@ -105,14 +107,18 @@ class pcalg():
                 if len(x_neighbors) >= level:
                     cont = True
                     for z in combinations(x_neighbors, level):
-                        pvalue = indep_test(self.dataset[:,x:x+1],
-                                            self.dataset[:,y:y+1],
-                                            self.dataset[:,z] if len(z) > 1 else None,
-                                            transform_marginals=False,
-                                            kwargs_m=self.kwargs_m,
-                                            kwargs_c=self.kwargs_c,
-                                            exp_name='{}_{}_{}'.format(x,y,z),
-                                            device=self.device)
+                        print("""Starting Independence test between {} and {} conditioned on {}""".format(
+                           self.features[x],self.features[y],[self.features[f] for f in z]))
+                        with HiddenPrints():
+                            pvalue = indep_test(self.dataset[:,x:x+1],
+                                                self.dataset[:,y:y+1],
+                                                self.dataset[:,z] if len(z) > 1 else None,
+                                                transform_marginals=False,
+                                                kwargs_m=self.kwargs_m,
+                                                kwargs_c=self.kwargs_c,
+                                                exp_name='{}_{}_{}'.format(x,y,z),
+                                                device=self.device,
+                                                disable_tqdm=True)
                         print("""Independence test between {} and {} conditioned on {}: {}""".format(
                            self.features[x],self.features[y],[self.features[f] for f in z], pvalue))
                         print("Test Number: {}".format(counter))
@@ -155,13 +161,16 @@ class pcalg():
                 if z in self.d_separators[(x, y)]:
                     continue
                 if not self.stable:
-                    pvalue = indep_test(self.dataset[:,x],
-                                        self.dataset[:,y],
-                                        self.dataset[:,z] if len(z) > 1 else None,
-                                        kwargs_m=self.kwargs_m,
-                                        kwargs_c=self.kwargs_c,
-                                        exp_name='pc_{}_{}_{}'.format(x,y,z),
-                                        device=self.device)
+                    with HiddenPrints():
+                        pvalue = indep_test(self.dataset[:,x],
+                                            self.dataset[:,y],
+                                            self.dataset[:,z] if len(z) > 1 else None,
+                                            transform_marginals=False,
+                                            kwargs_m=self.kwargs_m,
+                                            kwargs_c=self.kwargs_c,
+                                            exp_name='pc_{}_{}_{}'.format(x,y,z),
+                                            device=self.device,
+                                            disable_tqdm=True)
                     if pvalue <= alpha:
                         # x and y are conditionnaly dependent
                         # so z is a collider.

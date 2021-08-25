@@ -59,7 +59,13 @@ def transform_data(data):
         if len(thread_sequence) >= 4:             
             # Sort by src_cre_date
             thread_sequence = thread_sequence.sort_values(by=['src_cre_date'])
-            
+
+            # Save time of first offer
+            first_offer_time = thread_sequence.iloc[0]['src_cre_date']
+
+            # Calculate time since first offer time
+            thread_sequence['time_since_first_offer'] = (thread_sequence['src_cre_date'] - first_offer_time).dt.total_seconds()
+
             # Check if thread sequence matches desired 0,2,1,.. format
             offer_sequence = thread_sequence['offr_type_id'].tolist()
             correct_sequence = [0] + [2, 1] * int((len(offer_sequence)-1)/2)
