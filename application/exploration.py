@@ -26,8 +26,10 @@ def preprocess(data):
     # Drop threads with offer prices outside 1-1000
     #data = data.loc[data['offr_price'] >= 1]
     #data = data.loc[data['offr_price'] <= 20000]
-
+    
     # Drop threads with concessions over offer price
+    print(data.filter(items=['concessions', 'opp_concessions', 'offr_price']).head(20))
+
     data = data.loc[data['concessions'] <= data['offr_price']]
     data = data.loc[data['opp_concessions'] <= data['offr_price']]
 
@@ -48,20 +50,20 @@ if __name__ == '__main__':
     pd.options.display.float_format = '{:,.3f}'.format
 
     chunksize = 10 ** 6
-    file_path = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed.csv')
+    file_path = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed_2.csv')
 
     # Read in data
     data = pd.read_csv(file_path, index_col=False)
-    
+
     # Preprocess data
     data = preprocess(data)
 
     # Save processed data
-    file_path_2 = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed_2.csv')
+    file_path_2 = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed_exp.csv')
     data.to_csv(file_path_2, index=False)
     
     # Read in data
-    file_path_2 = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed_2.csv')
+    file_path_2 = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed_exp.csv')
     data = pd.read_csv(file_path_2, index_col=False)
        
     # Describe data
@@ -107,6 +109,7 @@ if __name__ == '__main__':
     #   - offer counter
     #   - log(history + 1)
     #   - log(opponent history + 1)
+
     data_cons = data.filter(items=['log_concessions',
                                   'log_opp_concessions',
                                   'log_offr_price',
@@ -116,9 +119,6 @@ if __name__ == '__main__':
                                   'log_response_time',
                                   'log_opp_response_time',
                                   'log_time_since_offer'])
-
-    data['log_concessions_by_offr_price'] = data['log_concessions'] - data['log_offr_price']
-    data['log_opp_concessions_by_offr_price'] = data['log_opp_concessions'] - data['log_offr_price']
 
     # Save dataset
     file_path_cons = os.path.join('datasets', 'ebay_data', 'consessions_subset.csv')

@@ -37,16 +37,21 @@ def pc_application(input_dataset: pd.DataFrame, indep_test, alpha, device, exp_n
     undirected_graph = estimated_graph.to_undirected()
     nx.draw(undirected_graph)
     plot_graph(undirected_graph, os.path.join(figures_path, add_name + 'est_graph.pdf'))
+    nx.write_gpickle(undirected_graph, os.path.join(figures_path, add_name + 'est_graph.pickle'))
 
 
 def reciprocity_exp(data, obs, test=False):
-    data = data.filter(items=['log_concessions_by_offr_price', 
-                              'log_opp_concessions_by_offr_price',
-                              #'offer_counter',
+    data = data.filter(items=['log_concessions', 
+                              'log_opp_concessions',
+                              'log_offr_price',
+                              'log_time_since_offer',
                               'log_hist',
                               'log_opp_hist']).dropna()
 
-    data_small = data.sample(obs)
+    if len(data) > obs:
+        data_small = data.sample(obs)
+    else:
+        data_small = data
     del data
     print(data_small.columns)
     print(data_small.head())
@@ -144,14 +149,17 @@ def reciprocity_exp(data, obs, test=False):
 
 
 def timing_exp(data, obs, test=False):
-    data = data.filter(items=['log_concessions_by_offr_price', 
-                              'log_opp_concessions_by_offr_price'
-                              #'offer_counter',
-                              'log_response_time', 
-                              'log_opp_response_time',
-                              'log_hist', 
-                              'log_opp_hist']).dropna()
-    data_small = data.sample(obs)
+    data = data.filter(items=['log_concessions', 
+                              'log_opp_concessions', 
+                              'log_offr_price', 
+                              'log_response_time',
+                              'log_opp_response_time', 
+                              'log_time_since_offer']).dropna()
+    
+    if len(data) > obs:
+        data_small = data.sample(obs)
+    else:
+        data_small = data
     del data
     print(data_small.columns)
     print(data_small.head())
@@ -249,19 +257,20 @@ def timing_exp(data, obs, test=False):
 
 
 def reciprocity_t4_exp(data, obs, test=False):
-    data = data.filter(items=['log_concessions_by_offr_price', 
-                              'log_opp_concessions_by_offr_price',
-                              #'offer_counter',
+    data = data[data['offer_counter'] >= 4]
+
+    data = data.filter(items=['log_concessions', 
+                              'log_opp_concessions',
+                              'log_offr_price',
+                              'log_time_since_offer',
                               'log_hist',
                               'log_opp_hist']).dropna()
 
-    data = data[data['offer_counter'] >= 4]
-
-    data_small = data.sample(obs)
+    if len(data) > obs:
+        data_small = data.sample(obs)
+    else:
+        data_small = data
     del data
-    print(data_small.columns)
-    print(data_small.head())
-
     # Training settings
     args = TrainOptions().parse()
     args.exp_name = 'ebay_pc_recipr_t4'
@@ -359,7 +368,10 @@ if __name__ == '__main__':
     # Load dataset
     file_path_cons = os.path.join('datasets', 'ebay_data', 'consessions_subset.csv')
     data = pd.read_csv(file_path_cons, index_col=0)
-    
+
+    data['log_concessions_by_offr_price'] = data['log_concessions'] - data['log_offr_price']
+    data['log_opp_concessions_by_offr_price'] = data['log_opp_concessions'] - data['log_offr_price']
+
     data['log_hist'] = data['log_hist'].astype('float')
     data['log_opp_hist'] = data['log_opp_hist'].astype('float')
     data['log_concessions_by_offr_price'] = data['log_concessions_by_offr_price'].astype('float')
@@ -368,8 +380,26 @@ if __name__ == '__main__':
 
     obs = 10000
     test = False
-    print(data.head())
-    exit()
-    reciprocity_exp(data, obs, test=test)
-    reciprocity_t4_exp(data, obs, test=test)
+
+    # reciprocity_exp(data, obs, test=test)
+    # reciprocity_t4_exp(data, obs, test=test)
     timing_exp(data, obs, test=test)
+
+    # # Create new folders
+    # args = TrainOptions().parse()
+    # args.exp_name = 'ebay_pc_timing'
+    # args.flow_name = 'cop_flow'
+    # args.alpha_indep = 0.05
+    # add_name = 'flow'
+
+    # # Create Folders
+    # args = create_folders(args)
+
+    # # Read pickled graph
+    # undirected_Graph = nx.read_gpickle(os.path.join(os.path.join(args.figures_path, add_name + 'est_graph.pickle')))
+
+    # print(nx.info(undirected_Graph))
+
+    # # Show the nodes
+    # print(undirected_Graph.nodes())
+    # print(undirected_Graph.edges())

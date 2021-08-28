@@ -59,13 +59,7 @@ def transform_data(data):
         if len(thread_sequence) >= 4:             
             # Sort by src_cre_date
             thread_sequence = thread_sequence.sort_values(by=['src_cre_date'])
-
-            # Save time of first offer
-            first_offer_time = thread_sequence.iloc[0]['src_cre_date']
-
-            # Calculate time since first offer time
-            thread_sequence['time_since_first_offer'] = (thread_sequence['src_cre_date'] - first_offer_time).dt.total_seconds()
-
+            
             # Check if thread sequence matches desired 0,2,1,.. format
             offer_sequence = thread_sequence['offr_type_id'].tolist()
             correct_sequence = [0] + [2, 1] * int((len(offer_sequence)-1)/2)
@@ -150,20 +144,19 @@ if __name__ == '__main__':
                                    'anon_slr_id', 
                                    'fdbk_score_src',
                                    'fdbk_pstv_src', 
-                                    'offr_type_id', 
-                                    'status_id', 
-                                    'offr_price',
-                                    'src_cre_date', 
-                                    'slr_hist', 
-                                    'byr_hist', 
-                                    'any_mssg', 
-                                    'concessions',
-                                    'response_time', 
-                                    'opp_concessions', 
-                                    'opp_response_time'])
-
+                                   'offr_type_id', 
+                                   'status_id', 
+                                   'offr_price',
+                                   'src_cre_date', 
+                                   'slr_hist', 
+                                   'byr_hist', 
+                                   'any_mssg', 
+                                   'concessions',
+                                   'response_time', 
+                                   'opp_concessions', 
+                                   'opp_response_time'])
     # Create empty dataframe at destination
-    processed_file_path = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed.csv')
+    processed_file_path = os.path.join('datasets', 'ebay_data', 'anon_bo_threads_processed_2.csv')
     header.to_csv(processed_file_path, mode='w', header=True, index=False)
 
     # Convert the data
