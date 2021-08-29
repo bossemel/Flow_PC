@@ -3,7 +3,7 @@ from utils import create_folders
 import torch
 import json
 import os 
-from utils import create_folders, set_seeds
+from utils import create_folders, set_seeds, HiddenPrints
 from options import TrainOptions
 import time 
 from cdt.data import load_dataset
@@ -12,7 +12,8 @@ import pandas as pd
 import networkx as nx
 from utils.pc_utils import pcalg, resit
 from eval.plots import plot_graph, visualize_joint
-from cond_indep_test import copula_indep_test
+from cond_indep_test import copula_indep_test, marginal_transform
+
 
 eps = 1e-7
 
@@ -108,19 +109,28 @@ if __name__ == '__main__':
               'use_batch_norm': args.batch_norm_c,
               'unconditional_transform': args.unconditional_transform_c}
 
-    # # Create new folders
-    # args.exp_name = 'exp_pc'
-    # args.flow_name = 'cop_flow'
-    # args.alpha_indep = 0.05
+    # Create new folders
+    args.exp_name = 'exp_pc'
+    args.flow_name = 'cop_flow'
+    args.alpha_indep = 0.05
 
-    # # Create Folders
-    # args = create_folders(args)
-    # with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
-    #     json.dump(args.__dict__, f, indent=2)
+    # Create Folders
+    args = create_folders(args)
+    with open(os.path.join(args.experiment_logs, 'args'), 'w') as f:
+        json.dump(args.__dict__, f, indent=2)
 
-    # start = time.time()
-    # pc_exp(s_data_small, s_graph_small, indep_test=copula_indep_test, 
-    #        alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
-    #        kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
-    # end = time.time()
-    # print('Elapsed time: {}'.format(end - start))
+    start = time.time()
+    transform = True
+    if transform:
+        # Transform marginals 
+        print('Starting marginal transform')
+        with HiddenPrints():
+            columns = s_data_small.columns
+            s_data_small = pd.DataFrame(marginal_transform(s_data_small.to_numpy(), args.exp_name, device=args.device, disable_tqdm=True, **kwargs_m).float().detach().cpu().numpy(),
+                                        columns=columns)
+        
+    pc_exp(s_data_small, s_graph_small, indep_test=copula_indep_test, 
+           alpha=args.alpha_indep, device=args.device, exp_name=args.exp_name,
+           kwargs_m=kwargs_m, kwargs_c=kwargs_c, figures_path=args.figures_path, add_name='flow')
+    end = time.time()
+    print('Elapsed time: {}'.format(end - start))
