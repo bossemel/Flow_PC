@@ -1,4 +1,4 @@
-# FLOW PC
+# Flow-PC
 
 A deep-learning based PC algorithm for causal discovery. The conditional independence test is based on conditional mutual information which is in turn estimated by conditional copula density. The conditional copula density is measured using Normalizing Flows for both the marginal and the copula. 
 
