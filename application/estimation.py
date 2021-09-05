@@ -40,7 +40,13 @@ def pc_application(input_dataset: pd.DataFrame, indep_test, alpha, device, exp_n
     nx.write_gpickle(undirected_graph, os.path.join(figures_path, add_name + 'est_graph.pickle'))
 
 
-def reciprocity_exp(data, obs, test=False):
+def reciprocity_exp(data: pd.DataFrame, obs: int, test: bool=False):
+    """
+    Run the reciprocity experiment. 
+    :param data: the dataset to be used for the experiment.
+    :param obs: the number of observation to be used for the experiment. 
+    :param test: if True, the experiment is run in test mode.
+    """
     data = data.filter(items=['log_concessions', 
                               'log_opp_concessions',
                               'log_offr_price',
@@ -132,7 +138,11 @@ def reciprocity_exp(data, obs, test=False):
         print('Starting marginal transform')
         with HiddenPrints():
             columns = data_small.columns
-            data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), args.exp_name, device=args.device, disable_tqdm=True, **kwargs_m).float().detach().cpu().numpy(),
+            data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), 
+                                        args.exp_name, 
+                                        device=args.device, 
+                                        disable_tqdm=True, 
+                                        **kwargs_m).float().detach().cpu().numpy(),
                                         columns=columns)
         
         # Save transformed dataset
@@ -148,7 +158,13 @@ def reciprocity_exp(data, obs, test=False):
     print('Elapsed time: {}'.format(end - start))
 
 
-def timing_exp(data, obs, test=False):
+def timing_exp(data: pd.DataFrame, obs: int, test: bool=False):
+    """
+    Run the timing experiment.
+    :param data: the dataset to be used for the experiment.
+    :param obs: the number of observation to be used for the experiment.
+    :param test: if True, the experiment is run in test mode.
+    """
     data = data.filter(items=['log_concessions', 
                               'log_opp_concessions', 
                               'log_offr_price', 
@@ -240,7 +256,11 @@ def timing_exp(data, obs, test=False):
         print('Starting marginal transform')
         with HiddenPrints():
             columns = data_small.columns
-            data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), args.exp_name, device=args.device, disable_tqdm=True, **kwargs_m).float().detach().cpu().numpy(),
+            data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), 
+                                                         args.exp_name, 
+                                                         device=args.device, 
+                                                         disable_tqdm=True, 
+                                                         **kwargs_m).float().detach().cpu().numpy(),
                                         columns=columns)
         
         # Save transformed dataset
@@ -256,7 +276,13 @@ def timing_exp(data, obs, test=False):
     print('Elapsed time: {}'.format(end - start))
 
 
-def reciprocity_t4_exp(data, obs, test=False):
+def reciprocity_t4_exp(data: pd.DataFrame, obs: int, test: bool=False):
+    """
+    Runs the t4 recirpcity experiment.
+    :param data: the dataset to be used for the experiment.
+    :param obs: the number of observation to be used for the experiment.
+    :param test: if True, the experiment is run in test mode.
+    """
     data = data[data['offer_counter'] >= 4]
 
     data = data.filter(items=['log_concessions', 
@@ -347,7 +373,11 @@ def reciprocity_t4_exp(data, obs, test=False):
         print('Starting marginal transform')
         with HiddenPrints():
             columns = data_small.columns
-            data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), args.exp_name, device=args.device, disable_tqdm=True, **kwargs_m).float().detach().cpu().numpy(),
+            data_small = pd.DataFrame(marginal_transform(data_small.to_numpy(), 
+                                        args.exp_name, 
+                                        device=args.device, 
+                                        disable_tqdm=True, 
+                                        **kwargs_m).float().detach().cpu().numpy(),
                                         columns=columns)
         
         # Save transformed dataset
@@ -381,25 +411,6 @@ if __name__ == '__main__':
     obs = 10000
     test = False
 
-    # reciprocity_exp(data, obs, test=test)
-    # reciprocity_t4_exp(data, obs, test=test)
+    reciprocity_exp(data, obs, test=test)
+    reciprocity_t4_exp(data, obs, test=test)
     timing_exp(data, obs, test=test)
-
-    # # Create new folders
-    # args = TrainOptions().parse()
-    # args.exp_name = 'ebay_pc_timing'
-    # args.flow_name = 'cop_flow'
-    # args.alpha_indep = 0.05
-    # add_name = 'flow'
-
-    # # Create Folders
-    # args = create_folders(args)
-
-    # # Read pickled graph
-    # undirected_Graph = nx.read_gpickle(os.path.join(os.path.join(args.figures_path, add_name + 'est_graph.pickle')))
-
-    # print(nx.info(undirected_Graph))
-
-    # # Show the nodes
-    # print(undirected_Graph.nodes())
-    # print(undirected_Graph.edges())

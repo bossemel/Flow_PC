@@ -7,9 +7,14 @@ from tqdm import tqdm
 
 
 @ray.remote
-def get_concessions_responses(thread_sequence, thread):
+def get_concessions_responses(thread_sequence: pd.DataFrame) -> tuple:
     """
     Get the concessions and responses for a thread.
+    :param thread_sequence: The thread sequence.
+    :return: A tuple of (<concessions>, 
+                         <responses>, 
+                         <opponent_concessions>, 
+                         <opponent_resopnse>).
     """
     # Calculate the concessions 
     price_sequence = thread_sequence['offr_price'].tolist()
@@ -30,9 +35,11 @@ def get_concessions_responses(thread_sequence, thread):
 
 
 @ray.remote
-def transform_data(data):
+def transform_data(data: pd.DataFrame) -> tuple:
     """
-    Generate the concession variable
+    Generate the concession variable.
+    :param data: The data to be transformed.
+    :return: A tuple of the transformed data and the number of rows.
     """    
     # Loop through thread ids
     unique_threads = data['anon_thread_id'].unique()
@@ -67,7 +74,7 @@ def transform_data(data):
                 counter += 1
 
                 # Get concession and response variables
-                ray_result = get_concessions_responses.remote(thread_sequence, thread)
+                ray_result = get_concessions_responses.remote(thread_sequence)
                 concessions, responses, opp_concessions, opp_resonses = ray.get(ray_result)
 
                 # Add to data
@@ -94,6 +101,11 @@ def transform_data(data):
         
 
 def convert_chunk(chunk):
+    """
+    Converts one chunk and saves it to the csv. 
+    :param chunk: The chunk to be converted.
+    :return: The number of rows converted.
+    """
     # Transform the data
     transformed = transform_data.remote(chunk)
     data, counter = ray.get(transformed)
@@ -103,6 +115,10 @@ def convert_chunk(chunk):
     return counter
 
 def convert_chunks(filename):
+    """
+    Converts the dataset in chunks. 
+    :param filename: The name of the file to be converted.
+    """
     full_counter = 0
     for cc, chunk in enumerate(pd.read_csv(filename, chunksize=chunksize, usecols=usecols)):
         print('Chunk number {}'.format(cc))

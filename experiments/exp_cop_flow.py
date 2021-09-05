@@ -18,6 +18,11 @@ eps = 1e-7
 
 
 def visualize_inputs(inputs: np.ndarray, cond_inputs: np.ndarray) -> None:
+    """
+    Visualizes the input conditional und unconditional dataset.
+    :param inputs: Input dataset
+    :param cond_inputs: Conditional input dataset
+    """
     visualize_joint(inputs, args.figures_path, name='input_dataset')
     norm_distr = scipy.stats.norm()
     visualize_joint(norm_distr.cdf(inputs), args.figures_path, name='input_uni_dataset')
@@ -28,6 +33,19 @@ def visualize_inputs(inputs: np.ndarray, cond_inputs: np.ndarray) -> None:
 
 def cop_eval(model: Basic_Flow, inputs: torch.Tensor, cond_inputs: torch.Tensor, copula_distr: Copula_Distr, cond_copula_distr: Copula_Distr, 
              cond_set_dim: int, data_train: torch.Tensor, figures_path: str, experiment_logs: str) -> dict:
+    """
+    Evaluattion function for the copula flow. 
+    :param model: The model to be evaluated.
+    :param inputs: The input data.
+    :param cond_inputs: The conditional input data.
+    :param copula_distr: The copula distribution.
+    :param cond_copula_distr: The conditional copula distribution.
+    :param cond_set_dim: The dimension of the conditional set.
+    :param data_train: The training data.
+    :param figures_path: The path to save the figures.
+    :param experiment_logs: The path to save the experiment logs.
+    :return: The evaluation metrics.
+    """
     eval_metrics = {}
 
     # Plot copula samples
@@ -54,7 +72,15 @@ def cop_eval(model: Basic_Flow, inputs: torch.Tensor, cond_inputs: torch.Tensor,
     return eval_metrics
 
 
-def exp_cop(inputs: torch.Tensor, copula_distr, cond_inputs: torch.Tensor =None, cond_copula_distr: Copula_Distr =None) -> None:
+def exp_cop(inputs: torch.Tensor, copula_distr, 
+            cond_inputs: torch.Tensor =None, cond_copula_distr: Copula_Distr =None) -> None:
+    """
+    Copula Flow experiment. Trains the data and runs the evaluation.
+    :param inputs: The input data.
+    :param copula_distr: The copula distribution.
+    :param cond_inputs: The conditional input data.
+    :param cond_copula_distr: The conditional copula distribution.
+    """
     # Set conditioning set dimnesion
     cond_set_dim = cond_inputs.shape[-1] if cond_inputs is not None else None
 
@@ -114,6 +140,9 @@ def exp_cop(inputs: torch.Tensor, copula_distr, cond_inputs: torch.Tensor =None,
 
 
 def exp_2D_cop(args):
+    """
+    Loop for the 2D copula experiments.
+    """
     experiments = [('indep_2D', 'independent', None),
                    ('clayton_con_2D', 'clayton', 2), 
                    ('clayton_uncon_2D', 'clayton', 0+eps), 
@@ -143,6 +172,9 @@ def exp_2D_cop(args):
 
 
 def exp_4D_cop(args):
+    """
+    Loop for the 4D copula experiments.
+    """
     args.n_layers = 1
     args.hidden_units = 16
     args.n_blocks = 3
@@ -187,6 +219,9 @@ def exp_4D_cop(args):
 
 
 def random_search_2D():
+    """
+    Random search for the 2D copula flow.
+    """
     #Get inputs
     copula_distr = Copula_Distr('independent', theta=None, transform=True)
     inputs = torch.from_numpy(copula_distr.sample(args.obs))
@@ -207,6 +242,9 @@ def random_search_2D():
 
 
 def random_search_4D():
+    """
+    Random search for the 2D copula flow.
+    """
     #Get inputs
     inputs, copula_distr = mutivariate_copula(mix=False, copula='independent', marginal=None, theta=None, num_samples=args.obs, disable_marginal=True)
     inputs = torch.from_numpy(copula_distr.sample(args.obs))
@@ -245,8 +283,8 @@ if __name__ == '__main__':
     # Set Seed
     set_seeds(seed=args.seed, use_cuda=use_cuda)
 
-    #exp_2D_cop(args)
-    #exp_4D_cop(args)
+    exp_2D_cop(args)
+    exp_4D_cop(args)
 
     #Get inputs
     copula_distr = Copula_Distr(args.copula, theta=args.theta, transform=True)
@@ -256,7 +294,6 @@ if __name__ == '__main__':
     start_time = time.time()
     exp_cop(inputs, copula_distr)
     print("--- %s seconds ---" % (time.time() - start_time))
-    #exit()
 
-    #random_search_2D()
-    #random_search_4D()
+    random_search_2D()
+    random_search_4D()

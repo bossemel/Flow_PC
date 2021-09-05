@@ -64,6 +64,12 @@ def histogram(samples: np.ndarray, path: str, var_name: str, plt_name: str) -> N
 
 def visualize_joint(data: np.ndarray, figures_path: str, name: str, axis_1_name: str =None, axis_2_name: str =None) -> None:
     """Visualize 2D distribution as a seaborn jointplot.
+    Params:
+        data: 2D distribution
+        figures_path: path to save the figure
+        name: name of the figure
+        axis_1_name: name of the first axis
+        axis_2_name: name of the second axis
     """
     if axis_1_name is None:
         axis_1_name = 'X1'
@@ -80,6 +86,11 @@ def visualize_joint(data: np.ndarray, figures_path: str, name: str, axis_1_name:
 
 def plot_result_graphs(figures_path: str, exp_name: str, stats: dict, flow_name: str ='') -> None:
     """Plots training and validation set loss.
+    Params:
+        figures_path: path to save the figure
+        exp_name: name of the experiment
+        stats: dictionary with evaluation statistics
+        flow_name: name of the estimated flow
     """
     fig_1 = plt.figure(figsize=(8, 4))
     ax_1 = fig_1.add_subplot(111)
@@ -102,6 +113,9 @@ def plot_result_graphs(figures_path: str, exp_name: str, stats: dict, flow_name:
 def plot_graph(graph, path):
     """
     Plot the graph G with nodes and edges at positions pos.
+    Params:
+        graph: networkx graph
+        path: path to save the figure
     """
     plt.figure(figsize=(10,10))
     pos = graphviz_layout(graph, prog="circo")

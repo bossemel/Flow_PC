@@ -5,9 +5,11 @@ from eval.plots import histogram
 from pathlib import Path
 
 
-def preprocess(data):
+def preprocess(data: pd.DataFrame) -> pd.DataFrame:
     """
     Preprocess data.
+    :param data: data to preprocess.
+    :return: preprocessed data.
     """
     # Drop duplicate rows
     data = data.drop_duplicates()
@@ -23,10 +25,6 @@ def preprocess(data):
     # Drop na values
     data = data.dropna(subset=['concessions', 'response_time', 'opp_concessions', 'opp_response_time'])
 
-    # Drop threads with offer prices outside 1-1000
-    #data = data.loc[data['offr_price'] >= 1]
-    #data = data.loc[data['offr_price'] <= 20000]
-    
     # Drop threads with concessions over offer price
     print(data.filter(items=['concessions', 'opp_concessions', 'offr_price']).head(20))
 

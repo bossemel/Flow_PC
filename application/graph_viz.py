@@ -6,6 +6,9 @@ from eval.plots import plot_graph
 
 
 def recipr_graph():
+    """
+    Rename the nodes of the reciprocity graph.
+    """
     # Create new folders
     args = TrainOptions().parse()
     args.exp_name = 'ebay_pc_recipr'
@@ -41,6 +44,9 @@ def recipr_graph():
     plot_graph(undirected_graph, os.path.join(args.figures_path, add_name + 'est_graph_rename.pdf'))
 
 def recipr_t4_graph():
+    """
+    Rename the nodes of the T4 reciprocity graph.
+    """
     # Create new folders
     args = TrainOptions().parse()
     args.exp_name = 'ebay_pc_recipr_t4'
@@ -77,6 +83,10 @@ def recipr_t4_graph():
 
 
 def timing_graph():
+    """
+    Rename the nodes of the timing graph.
+    """
+
     # Create new folders
     args = TrainOptions().parse()
     args.exp_name = 'ebay_pc_timing'

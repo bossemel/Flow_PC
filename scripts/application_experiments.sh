@@ -10,3 +10,6 @@ python3 applications/exploration.py
 
 # Estimating three causal graphs
 python3 applications/estimation.py
+
+# Renaming nodes and plotting the graphs
+python3 applications/graph_viz.py

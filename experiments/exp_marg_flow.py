@@ -14,7 +14,12 @@ from eval.plots import visualize1d
 eps = 1e-7
 
 
-def kde_nll(data_train: np.ndarray, data_test: np.ndarray) -> np.ndarray:
+def kde_nll(data_train: np.ndarray, data_test: np.ndarray):
+    """
+    Computes the empirical CDF using kernel-density estimation and the NLL on the test data.
+    :param data_train: Training data.
+    :param data_test: Test data.
+    """
     norm_distr = scipy.stats.norm()
     kde = scipy.stats.gaussian_kde(data_train.reshape(-1,))
     cdf = np.vectorize(lambda x: kde.integrate_box_1d(-np.inf, x))
@@ -25,6 +30,10 @@ def kde_nll(data_train: np.ndarray, data_test: np.ndarray) -> np.ndarray:
     return -np.mean(norm_distr.logpdf(gaussian_samples))
 
 def exp_marg_transform(inputs: np.ndarray) -> None:
+    """
+    Marginal flow experiment.
+    :param inputs: Inputs to the model.
+    """
     # Transform into data object
     data_train, __, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, 
                                                                                            batch_size=args.batch_size_m, 
@@ -92,8 +101,6 @@ if __name__ == '__main__':
     inputs = marginal_data.sample(args.obs)
     
     exp_marg_transform(inputs)
-    exit()
-    
 
     # Transform into data object
     data_train, data_val, data_test, loader_train, loader_val, loader_test = split_data_marginal(inputs, 

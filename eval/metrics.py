@@ -5,7 +5,14 @@ eps = 1e-7
 
 
 def jsd_copula(pred_dist, true_dist, device: str, num_samples: int =100000):
-    """Returns JS-Divergence of the predicted distribution and the true distribution
+    """Returns JS-Divergence of the predicted distribution and the true distribution.
+    Params:
+        pred_dist: predicted distribution, copula flow
+        true_dist: true distribution, copula distribution
+        device: str, device to use
+        num_samples: int, number of samples to use for Monte Carlo estimate
+    Returns:    
+        jsd: float, JS-Divergence
     """
     # Get ground truth
     samples_target = torch.from_numpy(true_dist.sample(num_samples=num_samples))
