@@ -8,7 +8,6 @@ cdt==0.5.23
 certifi==2021.5.30
 chardet==4.0.0
 click==8.0.1
--e git+git@github.com:bossemel/Flow_PC.git@8a44604011110030ec82b99716c983e091600d8d#egg=cm_flows
 configparser==5.0.2
 cycler==0.10.0
 decorator==4.4.2
