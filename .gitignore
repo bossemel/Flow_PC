@@ -9,3 +9,6 @@ saved_models/
 .vscode/
 datasets/
 saved_results/
+.texpadtmp/
+README.pdf
+README.tex
