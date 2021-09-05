@@ -19,4 +19,4 @@ To run the experiments on the copula flow, the marginal flow and PC algorithm wi
 
 ## Application
 
-Download the [eBay negotation data at a thread level from NBER](https://data.nber.org/data-appendix/w24306/bargaining/anon_bo_threads.csv.gz) and save it under ```datasets/ebay_data/```. Then, run ```application/converter.py```. To create the summary statistics and histogram, run ```applications/exploration.py```. To run the example application, run ```applications/estimation.py```. 
+Download the [eBay negotation data at a thread level from NBER](https://data.nber.org/data-appendix/w24306/bargaining/anon_bo_threads.csv.gz) and save it under ```datasets/ebay_data/```. Then, run ```application/converter.py```. Then create the summary statistics and histogram by running ```applications/exploration.py```. To run the example application, run ```applications/estimation.py```. 
