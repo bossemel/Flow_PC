@@ -28,3 +28,7 @@ Download the [eBay negotation data at a thread level from NBER](https://data.nbe
 ```
 bash scripts/application_experiments.sh
 ```
+
+### License
+
+Usage of the package is allowed under the MIT license, which can be found in ```license.txt```.
