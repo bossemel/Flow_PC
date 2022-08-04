@@ -2,6 +2,8 @@
 
 A deep-learning based PC algorithm for causal discovery. The conditional independence test is based on conditional mutual information which is in turn estimated by conditional copula density. The conditional copula density is measured using Normalizing Flows for both the marginal and the copula. Implementation based on Implementation of [Machine Learning for Causal Discovery with Applications in Economics](https://www.researchgate.net/publication/362174852_Machine_Learning_for_Causal_Discovery_with_Applications_in_Economics).
 
+This repository is research code so use with caution :). 
+
 ### Installation
 
 For installation, first create a virtual environment and install the required packages:
